@@ -389,7 +389,7 @@ def run_one_fold(fold, df, features):
 
         if valid_avg['score'] < best_score:
             print(f">>>>>>>> Model Improved From {best_score} ----> {valid_avg['score']}")
-            torch.save(model.state_dict(), f'fold-{fold}.bin')
+            torch.save(model.state_dict(), OUTPUT_DIR+f'fold-{fold}.bin')
             best_score = valid_avg['score']
             p = 0
 
