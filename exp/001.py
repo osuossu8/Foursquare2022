@@ -105,6 +105,8 @@ scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(train[features].fillna(-1)))
 train[features] = X.copy()
 
+print()
+
 
 class MLPDataset:
     def __init__(self, X, y=None):
@@ -225,13 +227,13 @@ def run_one_fold(fold, df, features):
     train_loader = torch.utils.data.DataLoader(
                    train_dataset, shuffle=True,
                    batch_size=256,
-                   num_workers=4, pin_memory=True)
+                   num_workers=0, pin_memory=True)
 
     val_dataset = MLPDataset(X=val_df[features].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
     val_loader = torch.utils.data.DataLoader(
                  val_dataset, shuffle=False,
                  batch_size=512,
-                 num_workers=4, pin_memory=True)
+                 num_workers=0, pin_memory=True)
 
     del train_dataset, val_dataset
     gc.collect()
