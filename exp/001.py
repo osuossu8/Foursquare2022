@@ -46,6 +46,24 @@ import transformers
 from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 
+# https://www.kaggle.com/code/columbia2131/foursquare-iou-metrics
+def get_id2poi(input_df: pd.DataFrame) -> dict:
+    return dict(zip(input_df['id'], input_df['point_of_interest']))
+
+def get_poi2ids(input_df: pd.DataFrame) -> dict:
+    return input_df.groupby('point_of_interest')['id'].apply(set).to_dict()
+
+def get_score(input_df: pd.DataFrame):
+    scores = []
+    for id_str, matches in zip(input_df['id'].to_numpy(), input_df['matches'].to_numpy()):
+        targets = poi2ids[id2poi[id_str]]
+        preds = set(matches.split())
+        score = len((targets & preds)) / len((targets | preds))
+        scores.append(score)
+    scores = np.array(scores)
+    return scores.mean()
+
+
 class CFG:
     EXP_ID = '001'
     seed = 71
@@ -81,12 +99,13 @@ train = pd.read_csv('input/train_with_near_candidate_target.csv')
 train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
 
 
-print('load features')
+#print('load features')
 
-distance_features = unpickle('features/distance_features.pkl')
-features = list(distance_features.columns)
+#distance_features = unpickle('features/distance_features.pkl')
+#features = list(distance_features.columns)
 
 train = train[[CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+"""
 train = pd.concat([train, distance_features], 1)
 train[features] = train[features].astype(np.float16)
 
@@ -107,7 +126,7 @@ train[features] = X.copy()
 
 to_pickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl', scaler)
 print()
-
+"""
 
 class MLPDataset:
     def __init__(self, X, y=None):
@@ -277,10 +296,107 @@ def run_one_fold(fold, df, features):
             logger.info(f'Early Stopping')
             break
 
-
-for fold in range(5):
+"""
+for fold in range(CFG.n_splits):
     logger.info("Starting fold {} ...".format(fold))
 
     run_one_fold(fold, train, features)
 
 print('finished')
+"""
+
+def calc_cv_and_inference(df, features):
+    model_paths = [f'output/001/fold-{i}.bin' for i in range(CFG.n_splits)]
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    models = []
+    for p in model_paths:
+        model = MLP(df[features].shape[1])
+        model.to(device)
+        model.load_state_dict(torch.load(p))
+        model.eval()
+        models.append(model)
+
+    scaler = unpickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl')
+
+    y_true = []
+    y_pred = []
+    idx = []
+    for fold, model in enumerate(models):
+        val_df = df[df.fold == fold].reset_index(drop=True)
+        X = pd.DataFrame(scaler.fit_transform(val_df[features].fillna(-1))).values
+        y=val_df[[f"target_{i}" for i in range(10)]].values
+             
+        valid_dataset = MLPDataset(X=X, y=y)
+        valid_dataloader = torch.utils.data.DataLoader(
+                 valid_dataset, shuffle=False, 
+                 batch_size=512,
+                 num_workers=0, pin_memory=True)
+        
+        final_output = []
+        for b_idx, data in tqdm(enumerate(valid_dataloader)):
+            with torch.no_grad():
+                inputs = data['x'].to(device)
+                targets = data['y'].to(device)
+                output = model(inputs)
+                output = output.detach().cpu().numpy().tolist()
+                final_output.extend(output)
+        print(f1_score(y, np.array(final_output) > 0.5, average="micro"))
+        y_pred.append(np.array(final_output))
+        y_true.append(y)
+        idx.append(val_df['id'].values)
+
+    y_pred = np.concatenate(y_pred)
+    y_true = np.concatenate(y_true)
+    idx = np.concatenate(idx)
+
+    oof_df = pd.DataFrame()
+    oof_df[[f"target_{i}" for i in range(10)]] = y_true
+    oof_df[[f"oof_{i}" for i in range(10)]] = y_pred
+    oof_df['id'] = idx
+    oof_df = oof_df.sort_values('id')
+    oof_df.to_csv(OUTPUT_DIR+'oof.csv')
+
+    overall_cv_score = f1_score(y_true, y_pred > 0.5, average="micro")
+    logger.info(f'cv score {overall_cv_score}')
+    return oof_df
+
+#oof = calc_cv_and_inference(train, features)
+
+oof = pd.read_csv(OUTPUT_DIR+'oof.csv')[[f"oof_{i}" for i in range(10)]+['id']]
+
+train = pd.merge(train, oof, on='id', how='inner')[[CFG.target, "id"] + [f"oof_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+
+oof = train[[f"oof_{i}" for i in range(10)]] > 0.5
+
+print(oof.shape)
+print(oof.head())
+
+
+res_df = train[[CFG.target, "id"] +[f"near_id_{i}" for i in range(CFG.n_neighbors)]].copy()
+res_df = pd.concat([res_df, oof], 1)
+
+print(res_df.head())
+
+def func(row):
+    matches = []
+    for i in range(CFG.n_neighbors):
+        if row[f"oof_{i}"] == True:
+            matches.append(str(row[f"near_id_{i}"]))
+    if 'nan' in matches:
+        matches = list(set(matches)).remove('nan')
+    if matches is None:
+        return ''
+    return ' '.join(matches)
+
+tqdm.pandas()
+res_df['matches'] = res_df.progress_apply(lambda row: func(row), axis=1)
+res_df['matches'] = res_df['matches']+' '+res_df['id']
+res_df['matches'] = res_df['matches'].map(lambda x: ' '.join(set(x.split())))
+
+id2poi = get_id2poi(res_df)
+poi2ids = get_poi2ids(res_df)
+
+logger.info(f"CV: {get_score(res_df):.6f}")
+
+
