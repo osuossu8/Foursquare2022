@@ -70,3 +70,13 @@ if not os.path.exists(OUTPUT_DIR):
 set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
+
+
+
+train = pd.read_csv('input/train_with_near_candidate_target.csv')
+train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
+
+
+
+
+
