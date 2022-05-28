@@ -363,15 +363,11 @@ def calc_cv_and_inference(df, features):
 
 #oof = calc_cv_and_inference(train, features)
 
-oof = pd.read_csv(OUTPUT_DIR+'oof.csv')[[f"oof_{i}" for i in range(10)]+['id']]
+oof = pd.read_csv(OUTPUT_DIR+'oof.csv')
 
 train = pd.merge(train, oof, on='id', how='inner')[[CFG.target, "id"] + [f"oof_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
 oof = train[[f"oof_{i}" for i in range(10)]] > 0.5
-
-print(oof.shape)
-print(oof.head())
-
 
 res_df = train[[CFG.target, "id"] +[f"near_id_{i}" for i in range(CFG.n_neighbors)]].copy()
 res_df = pd.concat([res_df, oof], 1)
@@ -381,13 +377,9 @@ print(res_df.head())
 def func(row):
     matches = []
     for i in range(CFG.n_neighbors):
-        if row[f"oof_{i}"] == True:
-            matches.append(str(row[f"near_id_{i}"]))
-    if 'nan' in matches:
-        matches = list(set(matches)).remove('nan')
-    if matches is None:
-        return ''
-    return ' '.join(matches)
+        if (row[f"oof_{i}"] == True) & (row[f"near_id_{i}"] is not np.nan):
+            matches.append(row[f"near_id_{i}"])
+    return ' '.join(set(matches))
 
 tqdm.pandas()
 res_df['matches'] = res_df.progress_apply(lambda row: func(row), axis=1)
