@@ -31,6 +31,7 @@ from typing import Optional
 from sklearn import metrics
 from sklearn.metrics import roc_auc_score, accuracy_score, f1_score
 from sklearn.model_selection import StratifiedKFold, GroupKFold, KFold
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 import torch
 import torch.nn as nn
@@ -42,13 +43,13 @@ from torch.utils.data import DataLoader, Dataset
 import transformers
 
 
-from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter
+from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 
 class CFG:
     EXP_ID = '001'
     seed = 71
-    epochs = 5
+    epochs = 20
     folds = [0, 1, 2, 3, 4]
     N_FOLDS = 5
     LR = 1e-3
@@ -75,86 +76,20 @@ device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 
-
+print('load data')
 train = pd.read_csv('input/train_with_near_candidate_target.csv')
 train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
 
 
-train = train.head(10000)
+print('load features')
 
+distance_features = unpickle('features/distance_features.pkl')
+features = list(distance_features.columns)
 
-import Levenshtein
-import difflib
-from requests import get
-import multiprocessing
-import joblib
-
-
-def _add_distance_features(args):
-    _, df = args
-
-    columns = ['name', 'address', 'city', 'state',
-           'zip', 'country', 'url', 'phone', 'categories']
-
-    for i in tqdm(range(CFG.n_neighbors)):
-        for c in columns:
-            geshs = []
-            levens = []
-            jaros = []
-            lcss = []
-            for str1, str2 in df[[f"near_{c}_0", f"near_{c}_{i}"]].values.astype(str):
-                if str1==str1 and str2==str2:
-                    geshs.append(difflib.SequenceMatcher(None, str1, str2).ratio())
-                    levens.append(Levenshtein.distance(str1, str2))
-                    jaros.append(Levenshtein.jaro_winkler(str1, str2))
-                    #lcss.append(LCS(str(str1), str(str2)))
-                else:
-                    geshs.append(-1)
-                    levens.append(-1)
-                    jaros.append(-1)
-            df[f"near_{c}_{i}_gesh"] = geshs
-            df[f"near_{c}_{i}_leven"] = levens
-            df[f"near_{c}_{i}_jaro"] = jaros
-            #df[f"near_{c}_{i}_lcs"] = lcss
-
-            if not c in ['country', "phone", "zip"]:
-                df[f"near_{c}_{i}_len"] = df[f"near_{c}_{i}"].astype(str).map(len)
-                df[f"near_{c}_{i}_nleven"] = df[f"near_{c}_{i}_leven"] / df[[f"near_{c}_{i}_len", f"near_{c}_0_len"]].max(axis=1)
-                #df[f"near_{c}_{i}_nlcsi"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_{i}_len"]
-                #df[f"near_{c}_{i}_nlcs0"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_0_len"]
-    return df
-
-
-def add_distance_features(df):
-    processes = multiprocessing.cpu_count()
-    with multiprocessing.Pool(processes=processes) as pool:
-        dfs = pool.imap_unordered(_add_distance_features, df.groupby('country'))
-        dfs = tqdm(dfs)
-        dfs = list(dfs)
-    df = pd.concat(dfs)
-    return df
-
-train = add_distance_features(train)
-
-
-features = []
-
-columns = ['name', 'address', 'city', 'state',
-       'zip', 'country', 'url', 'phone', 'categories']
-for i in tqdm(range(CFG.n_neighbors)):
-    features.append(f"d_near_{i}")
-    for c in columns:        
-        features += [f"near_{c}_{i}_gesh", f"near_{c}_{i}_jaro"] #, f"near_{c}_{i}_lcs"]
-        if c in ['country', "phone", "zip"]:
-            features += [f"near_{c}_{i}_leven"]
-        else:
-            features += [f"near_{c}_{i}_len", f"near_{c}_{i}_nleven"] #, f"near_{c}_{i}_nlcsi", f"near_{c}_{i}_nlcs0"]
-
-print(features)
-
-
-train = train[features + [CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+train = train[[CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+train = pd.concat([train, distance_features], 1)
 train[features] = train[features].astype(np.float16)
+
 train.reset_index(drop=True, inplace=True)
 
 kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
@@ -163,71 +98,12 @@ for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(train, train["num_target"],
 
 
 print(train[features].shape)
-# print(train.head())
 
-"""
-import lightgbm as lgbm
+print('scaling')
 
-def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
-             n_class=None, model_dir=None, folds=None):
-    models = []
-    oof = np.zeros((len(y), n_class), dtype=np.float64)
-
-    for i in tqdm(range(CFG.n_splits)):
-        print(f"== fold {i} ==")
-        trn_idx = folds!=i
-        val_idx = folds==i
-        X_train, y_train = X[trn_idx], y.iloc[trn_idx]
-        X_valid, y_valid = X.iloc[val_idx], y.iloc[val_idx]
-
-        if model_dir is None:
-            model = lgbm.LGBMClassifier(**params)
-            model.fit(
-                X_train, y_train,
-                eval_set=[(X_valid, y_valid)],
-                early_stopping_rounds=es_rounds,
-                eval_metric='logloss',
-    #             verbose=-1)
-                verbose=50)
-        else:
-            with open(f'{model_dir}/lgbm_fold{i}.pkl', 'rb') as f:
-                model = pickle.load(f)
-
-        pred = model.predict_proba(X_valid)
-        oof[val_idx] = pred
-        models.append(model)
-
-        file = OUTPUT_DIR+f'lgbm_fold{i}.pkl'
-        pickle.dump(model, open(file, 'wb'))
-        print()
-
-    #cv = (oof.argmax(axis=-1) == y).mean()
-    #print(f"CV-accuracy: {cv}")
-
-    cv = f1_score(y, oof > 0.5, average="micro")
-    print(f"CV-micro f1: {cv}")
-    return oof, models
-
-
-params = {
-    'objective': "logloss",
-    'learning_rate': 0.2,
-    'reg_alpha': 0.1,
-    'reg_lambda': 0.1,
-    'random_state': 42,
-
-    'max_depth': 7,
-    'num_leaves': 35,
-    'n_estimators': 1000000,
-    "colsample_bytree": 0.9,
-}
-
-oof, models = fit_lgbm(train[features], train[[f"target_{i}" for i in range(10)]],
-                       params=params, n_class=int(train["num_target"].max() + 1),
-                       N_SPLITS=CFG.n_splits, folds=train["fold"].values)
-"""
-#print(oof.shape)
-#np.save(OUTPUT_DIR+'oof.npy', oof)
+scaler = StandardScaler()
+X = pd.DataFrame(scaler.fit_transform(train[features].fillna(-1)))
+train[features] = X.copy()
 
 
 class MLPDataset:
@@ -270,7 +146,7 @@ class MetricMeter(object):
 
     @property
     def avg(self):
-        self.score = f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="micro") # calc_loss(self.y_true, self.y_pred)
+        self.score = f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="micro")
        
         return {
             "score" : self.score,
@@ -348,14 +224,14 @@ def run_one_fold(fold, df, features):
     train_dataset = MLPDataset(X=trn_df[features].values, y=trn_df[[f"target_{i}" for i in range(10)]].values)
     train_loader = torch.utils.data.DataLoader(
                    train_dataset, shuffle=True,
-                   batch_size=32,
-                   num_workers=0, pin_memory=True)
+                   batch_size=256,
+                   num_workers=4, pin_memory=True)
 
     val_dataset = MLPDataset(X=val_df[features].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
     val_loader = torch.utils.data.DataLoader(
                  val_dataset, shuffle=False,
-                 batch_size=32,
-                 num_workers=0, pin_memory=True)
+                 batch_size=512,
+                 num_workers=4, pin_memory=True)
 
     del train_dataset, val_dataset
     gc.collect()
@@ -370,11 +246,11 @@ def run_one_fold(fold, df, features):
     patience = 5
     p = 0
     min_loss = 999
-    best_score = 999
+    best_score = -np.inf
 
-    for epoch in range(1, 100 + 1):
+    for epoch in range(1, CFG.epochs + 1):
 
-        print("Starting {} epoch...".format(epoch))
+        logger.info("Starting {} epoch...".format(epoch))
 
         start_time = time.time()
 
@@ -384,23 +260,23 @@ def run_one_fold(fold, df, features):
 
         elapsed = time.time() - start_time
 
-        print(f'Epoch {epoch+1} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
-        print(f"Epoch {epoch+1} - train_rmse:{train_avg['score']:0.5f}  valid_rmse:{valid_avg['score']:0.5f}")
+        logger.info(f'Epoch {epoch+1} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
+        logger.info(f"Epoch {epoch+1} - train_score:{train_avg['score']:0.5f}  valid_score:{valid_avg['score']:0.5f}")
 
-        if valid_avg['score'] < best_score:
-            print(f">>>>>>>> Model Improved From {best_score} ----> {valid_avg['score']}")
+        if valid_avg['score'] > best_score:
+            logger.info(f">>>>>>>> Model Improved From {best_score} ----> {valid_avg['score']}")
             torch.save(model.state_dict(), OUTPUT_DIR+f'fold-{fold}.bin')
             best_score = valid_avg['score']
             p = 0
 
         p += 1
         if p > patience:
-            print(f'Early Stopping')
+            logger.info(f'Early Stopping')
             break
 
 
 for fold in range(5):
-    print("Starting fold {} ...".format(fold))
+    logger.info("Starting fold {} ...".format(fold))
 
     run_one_fold(fold, train, features)
 
