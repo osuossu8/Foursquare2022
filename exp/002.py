@@ -78,7 +78,9 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 train = pd.read_csv('input/train_with_near_candidate_target.csv')
 
-del train[[f"target_{i}" for i in range(10)]]; gc.collect()
+
+for i in range(10):
+    del train[f"target_{i}"]; gc.collect()
 
 
 for i in range(CFG.n_neighbors):
