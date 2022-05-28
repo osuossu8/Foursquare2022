@@ -105,6 +105,9 @@ train = train[[CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.
 train = pd.concat([train, distance_features], 1)
 train[features] = train[features].astype(np.float16)
 
+train["target"] = train["target"].fillna(0)
+train["target"] = train["target"].astype(int)
+
 train.reset_index(drop=True, inplace=True)
 
 kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
