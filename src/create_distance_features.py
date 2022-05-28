@@ -46,7 +46,7 @@ from src.machine_learning_util import set_seed, set_device, init_logger, Average
 
 
 class CFG:
-    EXP_ID = '001'
+    # EXP_ID = '001'
     seed = 71
     epochs = 5
     folds = [0, 1, 2, 3, 4]
@@ -80,24 +80,21 @@ train = pd.read_csv('input/train_with_near_candidate_target.csv')
 #train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
 
 
-train = train.head(10000)
-
-
 import Levenshtein
 import difflib
 from requests import get
 import multiprocessing
 import joblib
-import cython
+#import cython
 
 
-def LCS(str S, str T):
-    cdef int i, j
-    cdef list dp = [[0] * (len(T) + 1) for _ in range(len(S) + 1)]
-    for i in range(len(S)):
-        for j in range(len(T)):
-            dp[i + 1][j + 1] = max(dp[i][j] + (S[i] == T[j]), dp[i + 1][j], dp[i][j + 1], dp[i + 1][j + 1])
-    return dp[len(S)][len(T)]
+#def LCS(str S, str T):
+#    cdef int i, j
+#    cdef list dp = [[0] * (len(T) + 1) for _ in range(len(S) + 1)]
+#    for i in range(len(S)):
+#        for j in range(len(T)):
+#            dp[i + 1][j + 1] = max(dp[i][j] + (S[i] == T[j]), dp[i + 1][j], dp[i][j + 1], dp[i + 1][j + 1])
+#    return dp[len(S)][len(T)]
 
 
 def _add_distance_features(args):
@@ -125,13 +122,13 @@ def _add_distance_features(args):
             df[f"near_{c}_{i}_gesh"] = geshs
             df[f"near_{c}_{i}_leven"] = levens
             df[f"near_{c}_{i}_jaro"] = jaros
-            df[f"near_{c}_{i}_lcs"] = lcss
+            #df[f"near_{c}_{i}_lcs"] = lcss
 
             if not c in ['country', "phone", "zip"]:
                 df[f"near_{c}_{i}_len"] = df[f"near_{c}_{i}"].astype(str).map(len)
                 df[f"near_{c}_{i}_nleven"] = df[f"near_{c}_{i}_leven"] / df[[f"near_{c}_{i}_len", f"near_{c}_0_len"]].max(axis=1)
-                df[f"near_{c}_{i}_nlcsi"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_{i}_len"]
-                df[f"near_{c}_{i}_nlcs0"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_0_len"]
+                #df[f"near_{c}_{i}_nlcsi"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_{i}_len"]
+                #df[f"near_{c}_{i}_nlcs0"] = df[f"near_{c}_{i}_lcs"] / df[f"near_{c}_0_len"]
     return df
 
 
@@ -154,11 +151,11 @@ columns = ['name', 'address', 'city', 'state',
 for i in tqdm(range(CFG.n_neighbors)):
     features.append(f"d_near_{i}")
     for c in columns:        
-        features += [f"near_{c}_{i}_gesh", f"near_{c}_{i}_jaro", f"near_{c}_{i}_lcs"]
+        features += [f"near_{c}_{i}_gesh", f"near_{c}_{i}_jaro"] # , f"near_{c}_{i}_lcs"]
         if c in ['country', "phone", "zip"]:
             features += [f"near_{c}_{i}_leven"]
         else:
-            features += [f"near_{c}_{i}_len", f"near_{c}_{i}_nleven", f"near_{c}_{i}_nlcsi", f"near_{c}_{i}_nlcs0"]
+            features += [f"near_{c}_{i}_len", f"near_{c}_{i}_nleven"] # , f"near_{c}_{i}_nlcsi", f"near_{c}_{i}_nlcs0"]
 
 print(features)
 
