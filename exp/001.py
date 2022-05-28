@@ -105,6 +105,7 @@ scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(train[features].fillna(-1)))
 train[features] = X.copy()
 
+to_pickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl', scaler)
 print()
 
 
