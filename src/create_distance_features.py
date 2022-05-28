@@ -114,7 +114,7 @@ def _add_distance_features(args):
                     geshs.append(difflib.SequenceMatcher(None, str1, str2).ratio())
                     levens.append(Levenshtein.distance(str1, str2))
                     jaros.append(Levenshtein.jaro_winkler(str1, str2))
-                    lcss.append(LCS(str(str1), str(str2)))
+                    #lcss.append(LCS(str(str1), str(str2)))
                 else:
                     geshs.append(-1)
                     levens.append(-1)
