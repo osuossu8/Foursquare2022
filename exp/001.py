@@ -49,7 +49,7 @@ from src.machine_learning_util import set_seed, set_device, init_logger, Average
 class CFG:
     EXP_ID = '001'
     seed = 71
-    epochs = 20
+    epochs = 15
     folds = [0, 1, 2, 3, 4]
     N_FOLDS = 5
     LR = 1e-3
@@ -148,7 +148,7 @@ class MetricMeter(object):
 
     @property
     def avg(self):
-        self.score = f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.3, average="micro")
+        self.score = f1_score(np.array(self.y_true), np.array(self.y_pred) > 0.5, average="micro")
        
         return {
             "score" : self.score,
