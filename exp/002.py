@@ -95,13 +95,15 @@ import joblib
 
 
 distance_features = unpickle('features/distance_features.pkl')
+features = list(distance_features.columns)
 
 print(distance_features.shape)
-print(distance_features.head(1))
+print(features)
 
 
 train = train[[CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 train = pd.concat([train, distance_features], 1)
+train[features] = train[features].astype(np.float16)
 
 train.reset_index(drop=True, inplace=True)
 
