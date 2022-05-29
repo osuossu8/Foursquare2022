@@ -45,6 +45,16 @@ import transformers
 from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 
+from sklearn.cluster import KMeans
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
+
+from sklearn.pipeline import make_pipeline, make_union
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.decomposition import TruncatedSVD
+
+
 def get_text(df):
     # Before concatenation, fill NAN with unknown
     df.fillna('unknown', inplace = True)
