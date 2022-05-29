@@ -45,6 +45,20 @@ import transformers
 from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 
+def get_text(df):
+    # Before concatenation, fill NAN with unknown
+    df.fillna('unknown', inplace = True)
+    df['text'] = df['name'] + ' ' + df['address'] + ' ' + df['city'] + ' ' + df['state'] + ' ' + df['country'] + ' ' + df['url'] + ' ' + df['categories'] 
+    return df
+
+
+def cos_sim_matrix(matrix1, matrix2):
+    d = matrix1 @ matrix2
+    norm1 = (matrix1 * matrix1).sum(axis=1, keepdims=True) ** .5
+    norm2 = (matrix2 * matrix2).sum(axis=0, keepdims=True) ** .5
+    return d / norm1 / norm2
+
+
 class CFG:
     # EXP_ID = '001'
     seed = 71
