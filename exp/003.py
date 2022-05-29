@@ -181,8 +181,10 @@ class MLP(nn.Module):
 
         self.head = nn.Sequential(
             nn.Linear(len_features, 256),
+            nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
             nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
             nn.Linear(64, 10)
         )
@@ -190,7 +192,7 @@ class MLP(nn.Module):
     def forward(self, features):
         # bs, len_features
         output = self.head(features)
-        return torch.sigmoid(output)
+        return output
 
 
 def loss_fn(logits, targets):
