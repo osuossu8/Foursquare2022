@@ -288,8 +288,8 @@ def run_one_fold(fold, df, features):
 
         elapsed = time.time() - start_time
 
-        logger.info(f'Epoch {epoch+1} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
-        logger.info(f"Epoch {epoch+1} - train_score:{train_avg['score']:0.5f}  valid_score:{valid_avg['score']:0.5f}")
+        logger.info(f'Epoch {epoch} - avg_train_loss: {train_loss:.5f}  avg_val_loss: {valid_loss:.5f}  time: {elapsed:.0f}s')
+        logger.info(f"Epoch {epoch} - train_score:{train_avg['score']:0.5f}  valid_score:{valid_avg['score']:0.5f}")
 
         if valid_avg['score'] > best_score:
             logger.info(f">>>>>>>> Model Improved From {best_score} ----> {valid_avg['score']}")
@@ -320,7 +320,8 @@ def calc_cv_and_inference(df, features):
         model.eval()
 
         val_df = df[df.fold == fold].reset_index(drop=True)
-        X = pd.DataFrame(scaler.transform(val_df[features].fillna(-1))).values
+        # X = pd.DataFrame(scaler.transform(val_df[features].fillna(-1))).values
+        X = pd.DataFrame(scaler.fit_transform(val_df[features].fillna(-1))).values
         y=val_df[[f"target_{i}" for i in range(10)]].values
              
         valid_dataset = MLPDataset(X=X, y=y)
@@ -358,12 +359,14 @@ def calc_cv_and_inference(df, features):
     return oof_df
 
 
+"""
 for fold in range(CFG.n_splits):
     logger.info("Starting fold {} ...".format(fold))
 
     run_one_fold(fold, train, features)
 
 print('train finished')
+"""
 
 
 oof = calc_cv_and_inference(train, features)
