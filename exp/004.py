@@ -104,9 +104,13 @@ print('load features')
 distance_features = unpickle('features/distance_features.pkl')
 features = list(distance_features.columns)
 
+cossim_features = unpickle('features/near_cossim_features.pkl')
+cossim_features = pd.DataFrame(cossim_features, columns=[f'cossim_{i+1}' for i in range(9)])
+features += [f'cossim_{i+1}' for i in range(9)]
+
 train = train[[CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
-train = pd.concat([train, distance_features], 1)
+train = pd.concat([train, distance_features, cossim_features], 1)
 train[features] = train[features].astype(np.float16)
 
 train.reset_index(drop=True, inplace=True)
