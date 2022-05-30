@@ -105,7 +105,7 @@ distance_features = unpickle('features/distance_features_v2.pkl')
 features = list(distance_features.columns)
 
 lat_lon_distance_features = unpickle('features/lon_lat_distaice_features.pkl')
-features = list(lat_lon_distance_features.columns)
+features += list(lat_lon_distance_features.columns)
 
 train = train[[CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
