@@ -154,7 +154,7 @@ class FoursquareDataset:
         self.max_len = max_len
 
     def __len__(self):
-        return len(self.excerpt)
+        return len(self.text)
 
     def __getitem__(self, item):
         text = str(self.text[item])
