@@ -99,8 +99,6 @@ class CFG:
     EXP_ID = '008'
     seed = 71
     epochs = 5
-    #folds = [0, 1, 2, 3, 4]
-    #N_FOLDS = 5
     LR = 1e-3
     ETA_MIN = 1e-6
     WEIGHT_DECAY = 1e-6
@@ -111,6 +109,7 @@ class CFG:
     target = "point_of_interest"
     n_neighbors = 10
     n_splits = 3
+    folds = [0, 1, 2]
     apex = True
     model_name = 'xlm-roberta-base'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -365,9 +364,11 @@ def calc_cv_and_inference(df):
 
 
 for fold in range(CFG.n_splits):
+    if fold not in CFG.folds:
+        continue
     logger.info("Starting fold {} ...".format(fold))
 
-    run_one_fold(fold, train, features)
+    run_one_fold(fold, train)
 
 print('train finished')
 
