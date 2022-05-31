@@ -99,7 +99,7 @@ def add_sep_token(df):
 class CFG:
     EXP_ID = '008'
     seed = 71
-    epochs = 5
+    epochs = 3
     LR = 1e-3
     ETA_MIN = 1e-6
     WEIGHT_DECAY = 1e-6
@@ -138,20 +138,42 @@ print('load features')
 train = add_sep_token(train)
 
 
+distance_features = unpickle('features/distance_features_v2.pkl')
+features = list(distance_features.columns)
+
+lat_lon_distance_features = unpickle('features/lon_lat_distaice_features.pkl')
+features += list(lat_lon_distance_features.columns)
+
+train = train[['text'] + [CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+
+train = pd.concat([train, distance_features, lat_lon_distance_features], 1)
+train[features] = train[features].astype(np.float16)
+
+train.reset_index(drop=True, inplace=True)
+
 kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
 for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(train, train["num_target"], train["num_target"]))):
     train.loc[val_idx, "fold"] = i
+
+print(train[features].shape)
+
+scaler = StandardScaler()
+X = pd.DataFrame(scaler.fit_transform(train[features].fillna(-1)))
+train[features] = X.copy()
+
+to_pickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl', scaler)
 
 print(train.shape)
 print(train.head())
 
 
 class FoursquareDataset:
-    def __init__(self, text, y, tokenizer=CFG.tokenizer, max_len=CFG.max_len):
+    def __init__(self, text, y, num_features, tokenizer=CFG.tokenizer, max_len=CFG.max_len):
         self.text = text
         self.y = y
         self.tokenizer = tokenizer
         self.max_len = max_len
+        self.num_features = num_features
 
     def __len__(self):
         return len(self.text)
@@ -171,27 +193,40 @@ class FoursquareDataset:
 
         ids = inputs["input_ids"]
         targets = self.y[item]
+        num_features = self.num_features[item]
 
         return {
             "x": torch.tensor(ids, dtype=torch.long),
-            "y" : torch.tensor(targets, dtype=torch.float32),
+            "y": torch.tensor(targets, dtype=torch.float32),
+            "num_features": torch.tensor(num_features, dtype=torch.float32),
         }
 
 
 class FoursquareModel(nn.Module):
-    def __init__(self, model_path):
+    def __init__(self, model_path, len_features):
         super(FoursquareModel, self).__init__()
         self.in_features = 768
         self.bert_model = AutoModel.from_pretrained(model_path)
         self.dropout = nn.Dropout(0.1)
-        self.l0 = nn.Linear(self.in_features, 10)
 
-    def forward(self, ids):
+        self.head = nn.Sequential(
+            nn.Linear(len_features+self.in_features, 256),
+            nn.BatchNorm1d(256),
+            nn.ReLU(inplace=True),
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(inplace=True),
+            nn.Linear(64, 10)
+        )
+
+    def forward(self, ids, num_features):
         bert_outputs = self.bert_model(ids)
 
         x = bert_outputs[1] # [0] # bs, 768
 
-        logits = self.l0(self.dropout(x))
+        x = torch.cat([self.dropout(x), num_features], 1)
+
+        logits = self.head(x)
         return logits
 
 
@@ -233,9 +268,10 @@ def train_fn(model, data_loader, device, optimizer, scheduler):
         optimizer.zero_grad()
         inputs = data['x'].to(device)
         targets = data['y'].to(device)
+        num_features = data['num_features'].to(device)
 
         with autocast(enabled=CFG.apex):
-            outputs = model(inputs)
+            outputs = model(inputs, num_features)
             loss = loss_fn(outputs, targets)
 
         scaler.scale(loss).backward()
@@ -259,8 +295,9 @@ def valid_fn(model, data_loader, device):
         for data in tk0:
             inputs = data['x'].to(device)
             targets = data['y'].to(device)
+            num_features = data['num_features'].to(device)
 
-            outputs = model(inputs)
+            outputs = model(inputs, num_features)
             loss = loss_fn(outputs, targets)
             losses.update(loss.item(), inputs.size(0))
             scores.update(targets, outputs)
@@ -268,17 +305,17 @@ def valid_fn(model, data_loader, device):
     return scores.avg, losses.avg
 
 
-def run_one_fold(fold, df):
+def run_one_fold(fold, df, features):
     trn_df = df[df.fold != fold].reset_index(drop=True)
     val_df = df[df.fold == fold].reset_index(drop=True)
 
-    train_dataset = FoursquareDataset(text=trn_df['text'].values, y=trn_df[[f"target_{i}" for i in range(10)]].values)
+    train_dataset = FoursquareDataset(text=trn_df['text'].values, y=trn_df[[f"target_{i}" for i in range(10)]].values, num_features=trn_df[features].values)
     train_loader = torch.utils.data.DataLoader(
                    train_dataset, shuffle=True,
                    batch_size=CFG.train_bs,
                    num_workers=0, pin_memory=True)
 
-    val_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
+    val_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values, num_features=val_df[features].values)
     val_loader = torch.utils.data.DataLoader(
                  val_dataset, shuffle=False,
                  batch_size=CFG.valid_bs,
@@ -287,7 +324,7 @@ def run_one_fold(fold, df):
     del train_dataset, val_dataset; gc.collect()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = FoursquareModel(CFG.model_name)
+    model = FoursquareModel(CFG.model_name, len(features))
     model = model.to(device)
 
     optimizer = transformers.AdamW(model.parameters(), lr=CFG.LR, weight_decay=CFG.WEIGHT_DECAY)
@@ -325,25 +362,26 @@ def run_one_fold(fold, df):
             break
 
 
-def calc_cv_and_inference(df):
+def calc_cv_and_inference(df, features):
     model_paths = [OUTPUT_DIR+f'fold-{i}.bin' for i in range(CFG.n_splits)]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    models = []
-    for p in model_paths:
-        model = FoursquareModel(CFG.model_name)
-        model.to(device)
-        model.load_state_dict(torch.load(p))
-        model.eval()
-        models.append(model)
+    scaler = unpickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl')
 
     y_true = []
     y_pred = []
     idx = []
-    for fold, model in enumerate(models):
+    for fold, p in enumerate(model_paths):
+        model = FoursquareModel(CFG.model_name, len(features))
+        model.to(device)
+        model.load_state_dict(torch.load(p))
+        model.eval()
+
         val_df = df[df.fold == fold].reset_index(drop=True)
-          
-        valid_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
+        val_df[features] = pd.DataFrame(scaler.fit_transform(val_df[features].fillna(-1)))  
+        y=val_df[[f"target_{i}" for i in range(10)]].values
+
+        valid_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values, num_features=val_df[features].values)
         valid_dataloader = torch.utils.data.DataLoader(
                  valid_dataset, shuffle=False, 
                  batch_size=CFG.valid_bs,
@@ -354,7 +392,8 @@ def calc_cv_and_inference(df):
             with torch.no_grad():
                 inputs = data['x'].to(device)
                 targets = data['y'].to(device)
-                output = model(inputs)
+                num_features = data['num_features'].to(device)
+                output = model(inputs, num_features)
                 output = output.detach().cpu().numpy().tolist()
                 final_output.extend(output)
         logger.info(f1_score(y, np.array(final_output) > 0.5, average="micro"))
@@ -383,7 +422,7 @@ for fold in range(CFG.n_splits):
         continue
     logger.info("Starting fold {} ...".format(fold))
 
-    run_one_fold(fold, train)
+    run_one_fold(fold, train, features)
 
 print('train finished')
 
