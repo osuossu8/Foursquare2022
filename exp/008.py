@@ -178,6 +178,23 @@ class FoursquareDataset:
         }
 
 
+class FoursquareModel(nn.Module):
+    def __init__(self, model_path):
+        super(FoursquareModel, self).__init__()
+        self.in_features = 768
+        self.bert_model = AutoModel.from_pretrained(model_path)
+        self.dropout = nn.Dropout(0.1)
+        self.l0 = nn.Linear(self.in_features, 10)
+
+    def forward(self, ids):
+        bert_outputs = self.bert_model(ids)
+
+        x = bert_outputs[0] # bs, 768
+
+        logits = self.l0(self.dropout(x))
+        return logits
+
+
 class MetricMeter(object):
     def __init__(self):
         self.reset()
@@ -251,7 +268,7 @@ def valid_fn(model, data_loader, device):
     return scores.avg, losses.avg
 
 
-def run_one_fold(fold, df, features):
+def run_one_fold(fold, df):
     trn_df = df[df.fold != fold].reset_index(drop=True)
     val_df = df[df.fold == fold].reset_index(drop=True)
 
@@ -270,13 +287,11 @@ def run_one_fold(fold, df, features):
     del train_dataset, val_dataset; gc.collect()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = AutoModel(CFG.model_name)
+    model = FoursquareModel(CFG.model_name)
     model = model.to(device)
 
     optimizer = transformers.AdamW(model.parameters(), lr=CFG.LR, weight_decay=CFG.WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, eta_min=CFG.ETA_MIN, T_max=500)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
 
     patience = 5
     p = 0
@@ -316,7 +331,7 @@ def calc_cv_and_inference(df):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     models = []
     for p in model_paths:
-        model = AutoModel(CFG.model_name)
+        model = FoursquareModel(CFG.model_name)
         model.to(device)
         model.load_state_dict(torch.load(p))
         model.eval()
