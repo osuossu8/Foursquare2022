@@ -133,7 +133,6 @@ print('load data')
 train = pd.read_csv('input/train_with_near_candidate_target_v2.csv')
 train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
 
-
 print('load features')
 
 train = add_sep_token(train)
@@ -190,7 +189,7 @@ class FoursquareModel(nn.Module):
     def forward(self, ids):
         bert_outputs = self.bert_model(ids)
 
-        x = bert_outputs[0] # bs, 768
+        x = bert_outputs[1] # [0] # bs, 768
 
         logits = self.l0(self.dropout(x))
         return logits
