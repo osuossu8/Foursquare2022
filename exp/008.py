@@ -147,9 +147,9 @@ print(train.head())
 
 
 class FoursquareDataset:
-    def __init__(self, text, target, tokenizer=CFG.tokenizer, max_len=CFG.max_len):
+    def __init__(self, text, y, tokenizer=CFG.tokenizer, max_len=CFG.max_len):
         self.text = text
-        self.target = target
+        self.y = y
         self.tokenizer = tokenizer
         self.max_len = max_len
 
@@ -170,7 +170,7 @@ class FoursquareDataset:
         )
 
         ids = inputs["input_ids"]
-        targets = self.target[item]
+        targets = self.y[item]
 
         return {
             "x": torch.tensor(ids, dtype=torch.long),
@@ -272,13 +272,13 @@ def run_one_fold(fold, df):
     trn_df = df[df.fold != fold].reset_index(drop=True)
     val_df = df[df.fold == fold].reset_index(drop=True)
 
-    train_dataset = FoursquareDataset(X=trn_df['text'].values, y=trn_df[[f"target_{i}" for i in range(10)]].values)
+    train_dataset = FoursquareDataset(text=trn_df['text'].values, y=trn_df[[f"target_{i}" for i in range(10)]].values)
     train_loader = torch.utils.data.DataLoader(
                    train_dataset, shuffle=True,
                    batch_size=CFG.train_bs,
                    num_workers=0, pin_memory=True)
 
-    val_dataset = FoursquareDataset(X=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
+    val_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
     val_loader = torch.utils.data.DataLoader(
                  val_dataset, shuffle=False,
                  batch_size=CFG.valid_bs,
@@ -343,7 +343,7 @@ def calc_cv_and_inference(df):
     for fold, model in enumerate(models):
         val_df = df[df.fold == fold].reset_index(drop=True)
           
-        valid_dataset = FoursquareDataset(X=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
+        valid_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df[[f"target_{i}" for i in range(10)]].values)
         valid_dataloader = torch.utils.data.DataLoader(
                  valid_dataset, shuffle=False, 
                  batch_size=CFG.valid_bs,
