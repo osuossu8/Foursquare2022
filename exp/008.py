@@ -39,6 +39,7 @@ from torch.nn import Parameter
 import torch.nn.functional as F
 from torch.optim import Adam, SGD, AdamW
 from torch.utils.data import DataLoader, Dataset
+from torch.cuda.amp import autocast, GradScaler
 
 import transformers
 from transformers import AutoConfig, AutoModel, AutoModelForMaskedLM, AutoTokenizer
