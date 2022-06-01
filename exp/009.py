@@ -166,6 +166,11 @@ for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(train, train["num_target"],
 print(train[features].shape)
 
 
+kf = GroupKFold(n_splits=2)
+for i, (trn_idx, val_idx) in enumerate(kf.split(train, train[CFG.target], train[CFG.target])):
+    train.loc[val_idx, "set"] = i
+
+
 test = train[train['set']==1].reset_index(drop=True)
 train = train[train['set']==0].reset_index(drop=True)
 
