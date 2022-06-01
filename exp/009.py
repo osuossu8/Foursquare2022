@@ -107,7 +107,7 @@ def add_sep_token(df):
 class CFG:
     EXP_ID = '009'
     seed = 71
-    epochs = 3
+    epochs = 6 # 3
     LR = 1e-3
     ETA_MIN = 1e-6
     WEIGHT_DECAY = 1e-6
