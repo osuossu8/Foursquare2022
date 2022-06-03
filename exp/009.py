@@ -388,10 +388,10 @@ def calc_cv_and_inference(df, features):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     scaler = unpickle(OUTPUT_DIR+f'standard_scaler_{CFG.EXP_ID}.pkl')
 
-    test[features] = pd.DataFrame(scaler.fit_transform(test[features].fillna(-1)))
+    df[features] = pd.DataFrame(scaler.fit_transform(df[features].fillna(-1)))
     y = test[[f"target_{i}" for i in range(10)]].values
 
-    valid_dataset = FoursquareDataset(text=test['text'].values, y=test[[f"target_{i}" for i in range(10)]].values, num_features=test[features].values)
+    valid_dataset = FoursquareDataset(text=df['text'].values, y=df[[f"target_{i}" for i in range(10)]].values, num_features=df[features].values)
     valid_dataloader = torch.utils.data.DataLoader(
                  valid_dataset, shuffle=False,
                  batch_size=CFG.valid_bs,
@@ -417,8 +417,8 @@ def calc_cv_and_inference(df, features):
         y_pred.append(np.array(final_output))
 
     y_pred = np.mean(y_pred, 0)
-    y_true = test[[f"target_{i}" for i in range(10)]].values
-    idx = test['id'].values
+    y_true = df[[f"target_{i}" for i in range(10)]].values
+    idx = df['id'].values
 
     #oof_df = pd.DataFrame()
     #oof_df[[f"target_{i}" for i in range(10)]] = y_true
@@ -430,20 +430,15 @@ def calc_cv_and_inference(df, features):
     overall_cv_score = f1_score(y_true, y_pred > 0.5, average="micro")
     logger.info(f'cv score {overall_cv_score}')
 
-    test[[f"oof_{i}" for i in range(10)]] = y_pred > 0.5
+    df[[f"oof_{i}" for i in range(10)]] = y_pred > 0.5
 
-    test['matches'] = test.progress_apply(lambda row: get_matches(row), axis=1)
-    test['matches'] = test['matches']+' '+test['id']
-    test['matches'] = test['matches'].map(lambda x: ' '.join(set(x.split())))
-
-    id2poi = get_id2poi(test)
-    poi2ids = get_poi2ids(test)
-
-    logger.info(f"IoU: {get_score(test):.6f}")
-
-    return #oof_df
+    df['matches'] = df.progress_apply(lambda row: get_matches(row), axis=1)
+    df['matches'] = df['matches']+' '+df['id']
+    df['matches'] = df['matches'].map(lambda x: ' '.join(set(x.split())))
+    return df
 
 
+"""
 for fold in range(CFG.n_splits):
     if fold not in CFG.folds:
         continue
@@ -452,8 +447,12 @@ for fold in range(CFG.n_splits):
     run_one_fold(fold, train, features)
 
 print('train finished')
+"""
 
+test = calc_cv_and_inference(test, features)
 
-calc_cv_and_inference(train, features)
+id2poi = get_id2poi(test)
+poi2ids = get_poi2ids(test)
 
+logger.info(f"IoU: {get_score(test):.6f}")
 
