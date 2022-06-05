@@ -222,6 +222,8 @@ oof, models = fit_lgbm(train[features], train["target"].astype(int),
                        params=params, n_class=int(train["target"].max() + 1),
                        N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
+#oof = np.load(OUTPUT_DIR+'oof.npy')
+
 print(oof.shape)
 np.save(OUTPUT_DIR+'oof.npy', oof)
 
@@ -235,6 +237,9 @@ for id, ps, ids in tqdm(zip(train["id"], oof, near_ids)):
         matches.append(id + " " + ids[idx])
     else:
         matches.append(id)
+
+id2poi = get_id2poi(train)
+poi2ids = get_poi2ids(train)
 train["matches"] = matches
-print(f"CV: {get_score(train):.6f}")
+print(f"IoU: {get_score(train):.6f}")
 
