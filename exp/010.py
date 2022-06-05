@@ -173,7 +173,7 @@ def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
     oof = np.zeros((len(y), n_class), dtype=np.float64)
 
     for i in tqdm(range(CFG.n_splits)):
-        print(f"== fold {i} ==")
+        logger.info(f"== fold {i} ==")
         trn_idx = folds!=i
         val_idx = folds==i
         X_train, y_train = X[trn_idx], y.iloc[trn_idx]
@@ -201,7 +201,7 @@ def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         print()
 
     cv = (oof.argmax(axis=-1) == y).mean()
-    print(f"CV-accuracy: {cv}")
+    logger.info(f"CV-accuracy: {cv}")
     return oof, models
 
 
@@ -241,5 +241,5 @@ for id, ps, ids in tqdm(zip(train["id"], oof, near_ids)):
 id2poi = get_id2poi(train)
 poi2ids = get_poi2ids(train)
 train["matches"] = matches
-print(f"IoU: {get_score(train):.6f}")
+logger.info(f"IoU: {get_score(train):.6f}")
 
