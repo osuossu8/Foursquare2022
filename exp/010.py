@@ -145,7 +145,7 @@ features = list(distance_features.columns)
 lat_lon_distance_features = unpickle('features/lon_lat_distaice_features.pkl')
 features += list(lat_lon_distance_features.columns)
 
-train = train[['text'] + [CFG.target, "num_target", "id"] + [f"target_{i}" for i in range(10)] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+train = train[['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
 train = pd.concat([train, distance_features, lat_lon_distance_features], 1)
 train[features] = train[features].astype(np.float16)
