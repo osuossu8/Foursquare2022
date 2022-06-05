@@ -134,7 +134,10 @@ train = pd.read_csv('input/train_with_near_candidate_target_v2.csv')
 
 for i in range(CFG.n_neighbors):
     train.loc[train[CFG.target]==train[f"near_target_{i}"], "target"] = i
-    
+
+train["target"] = train["target"].fillna(0)
+train["target"] = train["target"].astype(int)
+
 print('load features')
 
 train = add_sep_token(train)
@@ -149,9 +152,6 @@ train = train[['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in
 
 train = pd.concat([train, distance_features, lat_lon_distance_features], 1)
 train[features] = train[features].astype(np.float16)
-
-train["target"] = train["target"].fillna(0)
-train["target"] = train["target"].astype(int)
 
 train.reset_index(drop=True, inplace=True)
 
