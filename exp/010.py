@@ -156,7 +156,7 @@ train[features] = train[features].astype(np.float16)
 train.reset_index(drop=True, inplace=True)
 
 kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
-for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(train, train["num_target"], train["num_target"]))):
+for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(train, train["target"], train["target"]))):
     train.loc[val_idx, "fold"] = i
 
 print(train[features].shape)
