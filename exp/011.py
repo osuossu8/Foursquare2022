@@ -185,7 +185,7 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
             model.fit(
                 X_train, y_train,
                 #cat_features=['country'],
-                text_features=['categories'],
+                text_features=['text'],
                 eval_set=[(X_valid, y_valid)],
                 early_stopping_rounds=es_rounds,
                 # eval_metric='logloss',
