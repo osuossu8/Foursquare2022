@@ -190,7 +190,7 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
                 early_stopping_rounds=es_rounds,
                 # eval_metric='logloss',
     #             verbose=-1)
-                #verbose=50
+                verbose=50
             )
         else:
             with open(f'{model_dir}/cat_fold{i}.pkl', 'rb') as f:
