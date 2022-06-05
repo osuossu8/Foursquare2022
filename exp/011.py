@@ -227,7 +227,7 @@ params = {
 }
 
 
-oof, models = fit_lgbm(train[features+['text']], train["target"].astype(int),
+oof, models = fit_cat(train[features+['text']], train["target"].astype(int),
                        params=params, n_class=int(train["target"].max() + 1),
                        N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
