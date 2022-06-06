@@ -42,6 +42,10 @@ from torch.utils.data import DataLoader, Dataset
 import transformers
 
 
+import Levenshtein
+import difflib
+import multiprocessing
+from collections import Counter
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
@@ -306,12 +310,12 @@ for data in [train[train["set"]==0], train[train["set"]==1]]:
     train_data_simple = recall_simple(data)
     train_data = recall_knn(data, NUM_NEIGHBOR)
 
-    print('train data by knn: %s' % len(test_data))
+    print('train data by knn: %s' % len(train_data))
     train_data = train_data.merge(train_data_simple,
                                  on = ['id', 'match_id'],
                                  how = 'outer')
     del train_data_simple; gc.collect()
-    out_df.append(train_data)
+    df_train.append(train_data)
     del train_data; gc.collect()
 
 df_train = pd.concat(df_train, 0).reset_index(drop=True) 
