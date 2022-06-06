@@ -104,6 +104,14 @@ id_2_lat = {k:v for k, v in zip(train['id'].values, train['latitude'].values)}
 id_2_lon = {k:v for k, v in zip(train['id'].values, train['longitude'].values)}
 
 
+def LCS(S, T):
+    dp = [[0] * (len(T) + 1) for _ in range(len(S) + 1)]
+    for i in range(len(S)):
+        for j in range(len(T)):
+            dp[i + 1][j + 1] = max(dp[i][j] + (S[i] == T[j]), dp[i + 1][j], dp[i][j + 1], dp[i + 1][j + 1])
+    return dp[len(S)][len(T)]
+
+
 def _add_distance_features(args):
     _, df = args
 
