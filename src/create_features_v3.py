@@ -63,15 +63,7 @@ os.environ["PYTHONHASHSEED"] = str(CFG.seed)
 np.random.seed(CFG.seed)
 
 
-train = pd.read_csv("input/train.csv")
-test = pd.read_csv("input/test.csv")
-test[CFG.target] = "TEST"
-
-
-kf = GroupKFold(n_splits=2)
-for i, (trn_idx, val_idx) in enumerate(kf.split(train, train[CFG.target], train[CFG.target])):
-    train.loc[val_idx, "set"] = i
-print(train["set"].value_counts())
+data = pd.read_csv("input/train.csv")
 
 
 ## Parameters
@@ -85,6 +77,30 @@ feat_columns = ['dist', 'name', 'address', 'city',
 vec_columns = ['name', 'categories', 'address', 
                'state', 'url', 'country']
 rec_columns = ['name', 'address', 'categories', 'address', 'phone']
+
+
+# special process
+def get_lower(x):
+    try:
+        return x.lower()
+    except:
+        return x
+
+
+for col in data.columns:
+    if data[col].dtype == object and col != 'id':
+        data[col] = data[col].apply(get_lower)
+
+
+id2index_d = dict(zip(data['id'].values, data.index))
+
+
+tfidf_d = {}
+for col in vec_columns:
+    tfidf = TfidfVectorizer()
+    tv_fit = tfidf.fit_transform(data[col].fillna('nan'))
+    tfidf_d[col] = tv_fit
+
 
 def seed_everything(seed):
     random.seed(seed)
@@ -195,28 +211,48 @@ def add_features(df):
     return df
 
 
-# special process
-def get_lower(x):
-    try:
-        return x.lower()
-    except:
-        return x
-
-
 df_train = pd.read_csv('input/train_pairs.csv')
 
 print(df_train.shape)
 df_train = df_train[df_train['id']!=df_train['match_id']].reset_index(drop=True)
 print(df_train.shape)
 
-# add features & model prediction
-df_train = add_features(df_train)
-df_train['kdist_diff'] = (df_train['kdist'] - df_train['kdist_country']) / df_train['kdist_country']
-df_train['kneighbors_mean'] = df_train[['kneighbors', 'kneighbors_country']].mean(axis = 1)
+# print(df_train.head())
 
-print(df_train.shape)
-print(df_train['target'].value_counts())
+data = data.set_index('id')
 
-df_train.to_csv('input/train_pairs_with_dist_features.csv', index=False)
+
+count = 0
+start_row = 0
+unique_id = df_train['id'].unique().tolist()
+num_split_id = len(unique_id) // NUM_SPLIT
+
+
+df_out = []
+for k in tqdm(range(1, NUM_SPLIT + 1)):
+    print('Current split: %s' % k)
+    end_row = start_row + num_split_id
+    if k < NUM_SPLIT:
+        cur_id = unique_id[start_row : end_row]
+        cur_data = df_train[df_train['id'].isin(cur_id)]
+    else:
+        cur_id = unique_id[start_row: ]
+        cur_data = df_train[df_train['id'].isin(cur_id)]
+
+    # add features & model prediction
+    cur_data = add_features(cur_data)
+    cur_data['kdist_diff'] = (cur_data['kdist'] - cur_data['kdist_country']) /\
+                                cur_data['kdist_country']
+    cur_data['kneighbors_mean'] = cur_data[['kneighbors', 'kneighbors_country']].mean(axis = 1)
+
+    df_out.append(cur_data)
+    del cur_data; gc.collect()
+
+df_out = pd.concat(df_out, 0).reset_index(drop=True)
+print(df_out.shape)
+
+
+df_out.to_csv('input/train_pairs_with_dist_features.csv', index=False)
+
 
 
