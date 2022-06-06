@@ -143,7 +143,7 @@ print('load features')
 train = add_sep_token(train)
 
 distance_features = unpickle('features/all_distaice_features.pkl')
-features = list(distance_features.columns)
+features = [c for c in distance_features.columns if '_0_0' not in c]
 
 train = train[['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
