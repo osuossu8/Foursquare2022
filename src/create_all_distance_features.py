@@ -199,6 +199,17 @@ train = add_distance_features(train)
 
 features = []
 
+columns = ['name', 'address', 'city', 'state',
+       'zip', 'country', 'url', 'phone', 'categories']
+for i in tqdm(range(CFG.n_neighbors)):
+    features.append(f"d_near_{i}")
+    for c in columns:        
+        features += [f"near_{c}_{i}_gesh", f"near_{c}_{i}_jaro", f"near_{c}_{i}_lcs"]
+        if c in ['country', "phone", "zip"]:
+            features += [f"near_{c}_{i}_leven"]
+        else:
+            features += [f"near_{c}_{i}_len", f"near_{c}_{i}_nleven", f"near_{c}_{i}_nlcsi", f"near_{c}_{i}_nlcs0"]
+
 for i in ['latdiff_0_', 'londiff_0_', 'manhattan_0_', 'euclidean_0_', 'haversine_0_']:
     features += [c for c in train.columns if i in c]
 
