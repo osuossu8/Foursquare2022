@@ -140,7 +140,7 @@ train["target"] = train["target"].astype(int)
 
 print('load features')
 
-train = add_sep_token(train)
+# train = add_sep_token(train)
 
 distance_features = unpickle('features/all_distaice_features.pkl')
 features = [c for c in distance_features.columns if '_0_0' not in c]
@@ -149,16 +149,20 @@ features = [c for c in distance_features.columns if '_0_0' not in c]
 categorical_features = [] 
 text_features = []
 
-for i in range(1, CFG.n_neighbors):
-    categorical_features += [f'near_city_{i}', f'near_state_{i}', f'near_zip_{i}', f'near_countr_{i}']
+for i in range(CFG.n_neighbors):
+    categorical_features += [f'near_city_{i}', f'near_state_{i}', f'near_zip_{i}', f'near_country_{i}']
     text_features += [f'near_name_{i}', f'near_address_{i}', f'near_url_{i}', f'near_categories_{i}']
     
 print(len(categorical_features), len(text_features))
 
-train[categorical_features+text_features] = train[categorical_features+text_features].fillna('unknown')
+train[categorical_features+text_features] = train[categorical_features+text_features].fillna('unknown').astype(str)
+
+train['text'] = ''
+for t in text_features:
+    train['text'] += train[t] + ' '
 
 # train = train[['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
-train = train[categorical_features + text_features + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
+train = train[categorical_features + ['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
 train = pd.concat([train, distance_features], 1)
 train[features] = train[features].astype(np.float16)
@@ -195,12 +199,12 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
             model.fit(
                 X_train, y_train,
                 cat_features=categorical_features,
-                text_features=text_features,
+                text_features=['text'],
                 eval_set=[(X_valid, y_valid)],
                 early_stopping_rounds=es_rounds,
                 # eval_metric='logloss',
     #             verbose=-1)
-                verbose=50
+                verbose=100
             )
         else:
             with open(f'{model_dir}/cat_fold{i}.pkl', 'rb') as f:
@@ -237,7 +241,7 @@ params = {
 }
 
 
-oof, models = fit_cat(train[features+categorical_features+text_features], train["target"].astype(int),
+oof, models = fit_cat(train[features+categorical_features+['text']], train["target"].astype(int),
                        params=params, n_class=int(train["target"].max() + 1),
                        N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
