@@ -40,7 +40,9 @@ from torch.optim import Adam, SGD, AdamW
 from torch.utils.data import DataLoader, Dataset
 
 import transformers
-
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
