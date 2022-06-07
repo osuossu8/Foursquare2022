@@ -63,15 +63,13 @@ os.environ["PYTHONHASHSEED"] = str(CFG.seed)
 np.random.seed(CFG.seed)
 
 
-train = pd.read_csv("input/train.csv")
-test = pd.read_csv("input/test.csv")
-test[CFG.target] = "TEST"
+data = pd.read_csv("input/train.csv")
 
 
 kf = GroupKFold(n_splits=2)
-for i, (trn_idx, val_idx) in enumerate(kf.split(train, train[CFG.target], train[CFG.target])):
-    train.loc[val_idx, "set"] = i
-print(train["set"].value_counts())
+for i, (trn_idx, val_idx) in enumerate(kf.split(data, data[CFG.target], data[CFG.target])):
+    data.loc[val_idx, "set"] = i
+print(data["set"].value_counts())
 
 
 ## Parameters
@@ -231,10 +229,10 @@ id2index_d = dict(zip(train['id'].values, train.index))
 tfidf_d = {}
 for col in vec_columns:
     tfidf = TfidfVectorizer()
-    tv_fit = tfidf.fit_transform(train[col].fillna('nan'))
+    tv_fit = tfidf.fit_transform(data[col].fillna('nan'))
     tfidf_d[col] = tv_fit
 
-train_data = recall_knn(train, NUM_NEIGHBOR)
+train_data = recall_knn(data, NUM_NEIGHBOR)
 
 id2poi = dict(zip(train['id'].values, train['point_of_interest'].values))
 
@@ -245,7 +243,7 @@ print(train_data.shape)
 print(train_data['target'].value_counts())
 
 
-train = train.set_index('id')
+data = data.set_index('id')
 
 
 ## Prediction
