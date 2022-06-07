@@ -224,7 +224,7 @@ def add_features(df):
     return df
 
 
-id2index_d = dict(zip(train['id'].values, train.index))
+id2index_d = dict(zip(data['id'].values, data.index))
 
 tfidf_d = {}
 for col in vec_columns:
@@ -234,7 +234,7 @@ for col in vec_columns:
 
 train_data = recall_knn(data, NUM_NEIGHBOR)
 
-id2poi = dict(zip(train['id'].values, train['point_of_interest'].values))
+id2poi = dict(zip(data['id'].values, data['point_of_interest'].values))
 
 train_data['target'] = (train_data['id'].map(id2poi) == train_data['match_id'].map(id2poi)).astype(int)
 
