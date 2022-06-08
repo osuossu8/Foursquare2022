@@ -279,7 +279,7 @@ for k in tqdm(range(1, NUM_SPLIT + 1)):
     start_row = end_row
     count += len(cur_data)
 
-    del cur_data, cur_pred_df
+    del cur_data # , cur_pred_df
     gc.collect()
 print(count)
 
