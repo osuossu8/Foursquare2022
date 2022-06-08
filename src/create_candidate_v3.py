@@ -245,8 +245,6 @@ print(train_data['target'].value_counts())
 
 data = data.set_index('id')
 
-df_train = []
-
 ## Prediction
 count = 0
 start_row = 0
@@ -274,6 +272,10 @@ for k in tqdm(range(1, NUM_SPLIT + 1)):
     #cur_pred_df = cur_data[cur_data['pred'] > 0][['id', 'match_id']]
     #pred_df = pd.concat([pred_df, cur_pred_df])
 
+    print(cur_data.shape)
+    print(cur_data['target'].value_counts())
+    cur_data.to_csv(f'input/train_pairs_{k}_{NUM_SPLIT}.csv', index=False)
+
     df_train.append(cur_data)
 
     start_row = end_row
@@ -282,11 +284,4 @@ for k in tqdm(range(1, NUM_SPLIT + 1)):
     del cur_data # , cur_pred_df
     gc.collect()
 print(count)
-
-df_train = pd.concat(df_train, 0).reset_index(drop=True)
-
-print(df_train.shape)
-
-df_train.to_csv('input/train_pairs.csv', index=False)
-
 
