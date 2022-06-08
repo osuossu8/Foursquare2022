@@ -245,6 +245,7 @@ print(train_data['target'].value_counts())
 
 data = data.set_index('id')
 
+df_train = []
 
 ## Prediction
 count = 0
@@ -283,6 +284,8 @@ for k in tqdm(range(1, NUM_SPLIT + 1)):
 print(count)
 
 df_train = pd.concat(df_train, 0).reset_index(drop=True)
+
+print(df_train.shape)
 
 df_train.to_csv('input/train_pairs.csv', index=False)
 
