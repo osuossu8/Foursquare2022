@@ -148,6 +148,9 @@ features = [c for c in distance_features.columns if '_0_0' not in c]
 cat_cossim_features = unpickle('features/cat_cossim_features.pkl')
 features += list(cat_cossim_features.columns)
 
+
+print(train.shape, distance_features.shape, cat_cossim_features.shape)
+
 categorical_features = [] 
 text_features = []
 
@@ -163,9 +166,10 @@ train['text'] = ''
 for t in text_features:
     train['text'] += train[t] + ' '
 
+
 train = train[categorical_features + ['text'] + [CFG.target, "target", "id"] + [f"near_id_{i}" for i in range(CFG.n_neighbors)]]
 
-train = pd.concat([train, distance_features], 1)
+train = pd.concat([train, distance_features, cat_cossim_features], 1)
 train[features] = train[features].astype(np.float16)
 
 train.reset_index(drop=True, inplace=True)
