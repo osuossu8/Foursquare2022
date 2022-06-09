@@ -239,7 +239,8 @@ import catboost
 def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
              n_class=None, model_dir=None, folds=None):
     models = []
-    oof = np.zeros((len(y), n_class), dtype=np.float64)
+    # oof = np.zeros((len(y), n_class), dtype=np.float64)
+    oof = np.zeros((len(y)), dtype=np.float64)
 
     for i in tqdm(range(CFG.n_splits)):
         logger.info(f"== fold {i} ==")
@@ -264,7 +265,8 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
             with open(f'{model_dir}/cat_fold{i}.pkl', 'rb') as f:
                 model = pickle.load(f)
 
-        pred = model.predict_proba(X_valid)
+        # pred = model.predict_proba(X_valid)
+        pred = model.predict(X_valid)
         oof[val_idx] = pred
         models.append(model)
 
@@ -272,13 +274,14 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         pickle.dump(model, open(file, 'wb'))
         print()
 
-    cv = (oof.argmax(axis=-1) == y).mean()
+    #cv = (oof.argmax(axis=-1) == y).mean()
+    cv = ((oof > 0) == y).mean()
     logger.info(f"CV-accuracy: {cv}")
     return oof, models
 
 
 params = {
-    'objective': "MultiClass", # "Logloss",
+    'objective': "binary", # "MultiClass", # "Logloss",
     'learning_rate': 0.2,
     #'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -286,7 +289,8 @@ params = {
 
     #'max_depth': 7,
     #'num_leaves': 35,
-    'n_estimators': 1000000,
+    # 'n_estimators': 1000000,
+    'n_estimators': 500,
     #"colsample_bytree": 0.9,
     'use_best_model': True,
     #'cat_features': ['country'],
@@ -301,21 +305,23 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["target"].astype(int),
 
 
 print(oof.shape)
-np.save(OUTPUT_DIR+'oof.npy', oof)
+# np.save(OUTPUT_DIR+'oof.npy', oof)
 
-"""
-near_ids = train[[f"near_id_{i}" for i in range(CFG.n_neighbors)]].values
+test_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
+test_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv')
 
-matches = []
-for id, ps, ids in tqdm(zip(train["id"], oof, near_ids)):
-    idx = np.argmax(ps)
-    if idx > 0 and ids[idx]==ids[idx]:
-        matches.append(id + " " + ids[idx])
-    else:
-        matches.append(id)
+test = pd.concat([test_pos, test_neg], 0).reset_index(drop=True)
 
-id2poi = get_id2poi(train)
-poi2ids = get_poi2ids(train)
-train["matches"] = matches
-logger.info(f"IoU: {get_score(train):.6f}")
-"""
+del test_pos, test_neg; gc.collect()
+
+test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+test = test[test['pred'] > 0][['id', 'match_id']]
+print(test['id'].nunique())
+
+test = test.groupby('id')['match_id'].apply(list).reset_index()
+test['matches'] = test['match_id'].apply(lambda x: ' '.join(set(x)))
+
+id2poi = get_id2poi(test)
+poi2ids = get_poi2ids(test)
+logger.info(f"IoU: {get_score(test):.6f}")
+
