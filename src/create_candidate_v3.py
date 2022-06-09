@@ -276,8 +276,6 @@ for k in tqdm(range(1, NUM_SPLIT + 1)):
     print(cur_data['target'].value_counts())
     cur_data.to_csv(f'input/train_pairs_{k}_{NUM_SPLIT}.csv', index=False)
 
-    df_train.append(cur_data)
-
     start_row = end_row
     count += len(cur_data)
 
