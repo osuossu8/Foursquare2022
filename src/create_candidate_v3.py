@@ -257,6 +257,7 @@ for set_id, train_set in tqdm(enumerate([
     train_set.query('target == 1')
     ])):
 
+        print(f'*** set {set_id}, target {target_id} ***')
     #count = 0
     #start_row = 0
     #pred_df = pd.DataFrame()
