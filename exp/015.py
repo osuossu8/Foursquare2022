@@ -101,7 +101,7 @@ train['num_target'] = train[[f"target_{i}" for i in range(10)]].sum(1)
 
 print('load features')
 
-distance_features = unpickle('features/all_distance_features.pkl')
+distance_features = unpickle('features/all_distaice_features.pkl')
 features = [c for c in distance_features.columns if '_0_0' not in c]
 
 cat_cossim_features = unpickle('features/cat_cossim_features.pkl')
