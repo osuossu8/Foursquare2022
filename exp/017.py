@@ -250,7 +250,8 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         X_valid, y_valid = X.iloc[val_idx], y.iloc[val_idx]
 
         if model_dir is None:
-            model = catboost.CatBoostClassifier(**params)
+            # model = catboost.CatBoostClassifier(**params)
+            model = catboost.CatBoostRegressor(**params)
             model.fit(
                 X_train, y_train,
                 #cat_features=categorical_features,
