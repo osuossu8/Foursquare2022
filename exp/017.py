@@ -65,6 +65,21 @@ def get_score(input_df: pd.DataFrame):
     return scores.mean()
 
 
+def post_process(df):
+    id2match = dict(zip(df['id'].values, df['matches'].str.split()))
+
+    for base, match in df[['id', 'matches']].values:
+        match = match.split()
+        if len(match) == 1:
+            continue
+
+        for m in match:
+            if base not in id2match[m]:
+                id2match[m].append(base)
+    df['matches'] = df['id'].map(id2match).map(' '.join)
+    return df
+
+
 def add_sep_token(df):
     # Before concatenation, fill NAN with unknown
     df.fillna('unknown', inplace = True)
@@ -203,10 +218,10 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 print('load data')
 train_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
 
-len_pos = len(train_pos)
-len_neg_use = len_pos * 2
+#len_pos = len(train_pos)
+#len_neg_use = len_pos * 2
 
-train_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv', nrows=len_neg_use)
+train_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv') #, nrows=len_neg_use)
 
 train = pd.concat([
     train_pos, train_neg
@@ -307,6 +322,8 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["target"].astype(int),
 print(oof.shape)
 # np.save(OUTPUT_DIR+'oof.npy', oof)
 
+# models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
+
 test_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
 test_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv')
 
@@ -316,10 +333,15 @@ del test_pos, test_neg; gc.collect()
 
 test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
 test = test[test['pred'] > 0][['id', 'match_id']]
+# test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
 test['matches'] = test['match_id'].apply(lambda x: ' '.join(set(x)))
+test['matches'] = test['matches']+' '+test['id']
+test['matches'] = test['matches'].map(lambda x: ' '.join(set(x.split())))
+
+# test = post_process(test)
 
 train = pd.read_csv('input/train.csv')
 
