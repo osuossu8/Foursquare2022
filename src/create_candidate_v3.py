@@ -279,10 +279,10 @@ for set_id, train_set in tqdm(enumerate([
         print(cur_data['target'].value_counts())
         cur_data.to_csv(f'input/train_pairs_set_{set_id}_target_{target_id}.csv', index=False)
 
-        start_row = end_row
-        count += len(cur_data)
+        #start_row = end_row
+        #count += len(cur_data)
 
         del cur_data # , cur_pred_df
         gc.collect()
-print(count)
+#print(count)
 
