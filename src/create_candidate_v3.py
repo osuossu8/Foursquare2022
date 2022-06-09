@@ -235,51 +235,53 @@ for col in vec_columns:
 train_data = recall_knn(data, NUM_NEIGHBOR)
 
 id2poi = dict(zip(data['id'].values, data['point_of_interest'].values))
+id2set = dict(zip(data['id'].values, data['set'].values))
 
 train_data['target'] = (train_data['id'].map(id2poi) == train_data['match_id'].map(id2poi)).astype(int)
+train_data['set'] = train_data['id'].map(id2set)
 
 
 print(train_data.shape)
 print(train_data['target'].value_counts())
+print(train_data['set'].value_counts())
 
 
 data = data.set_index('id')
 
-## Prediction
-count = 0
-start_row = 0
-pred_df = pd.DataFrame()
-unique_id = train_data['id'].unique().tolist()
-num_split_id = len(unique_id) // NUM_SPLIT
-for k in tqdm(range(1, NUM_SPLIT + 1)):
-    print('Current split: %s' % k)
-    end_row = start_row + num_split_id
-    if k < NUM_SPLIT:
-        cur_id = unique_id[start_row : end_row]
-        cur_data = train_data[train_data['id'].isin(cur_id)]
-    else:
-        cur_id = unique_id[start_row: ]
-        cur_data = train_data[train_data['id'].isin(cur_id)]
+for set_id, train_set in tqdm(enumerate([
+    train_data.query('set == 0'),
+    train_data.query('set == 1')
+])):
+    for target_id, cur_data in tqdm(enumerate([
+    train_set.query('target == 0'),
+    train_set.query('target == 1')
+    ])):
 
-    # add features & model prediction
-    cur_data = add_features(cur_data)
-    #cur_data_cat = Pool(cur_data[TRAIN_FEATURES])
-    #for fold in range(5):
-    #    with open(f'../input/foursquare-data/007_cat_gpu_baseline_{fold}.pkl','rb') as f:
-    #        cat_model = pickle.load(f)
+    #count = 0
+    #start_row = 0
+    #pred_df = pd.DataFrame()
+    #unique_id = train_data['id'].unique().tolist()
+    #num_split_id = len(unique_id) // NUM_SPLIT
+    #for k in tqdm(range(1, NUM_SPLIT + 1)):
+    #    print('Current split: %s' % k)
+    #    end_row = start_row + num_split_id
+    #    if k < NUM_SPLIT:
+    #        cur_id = unique_id[start_row : end_row]
+    #        cur_data = train_data[train_data['id'].isin(cur_id)]
+    #    else:
+    #        cur_id = unique_id[start_row: ]
+    #        cur_data = train_data[train_data['id'].isin(cur_id)]
 
-    #    cur_data['pred'] = cat_model.predict(cur_data_cat)/5
-    #cur_pred_df = cur_data[cur_data['pred'] > 0][['id', 'match_id']]
-    #pred_df = pd.concat([pred_df, cur_pred_df])
+        cur_data = add_features(cur_data)
 
-    print(cur_data.shape)
-    print(cur_data['target'].value_counts())
-    cur_data.to_csv(f'input/train_pairs_{k}_{NUM_SPLIT}.csv', index=False)
+        print(cur_data.shape)
+        print(cur_data['target'].value_counts())
+        cur_data.to_csv(f'input/train_pairs_set_{set_id}_target_{target_id}.csv', index=False)
 
-    start_row = end_row
-    count += len(cur_data)
+        start_row = end_row
+        count += len(cur_data)
 
-    del cur_data # , cur_pred_df
-    gc.collect()
+        del cur_data # , cur_pred_df
+        gc.collect()
 print(count)
 
