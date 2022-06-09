@@ -282,7 +282,7 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
 
 
 params = {
-    'objective': "binary", # "MultiClass", # "Logloss",
+    'objective': "RMSE", # "MultiClass", # "Logloss",
     'learning_rate': 0.2,
     #'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -290,8 +290,7 @@ params = {
 
     #'max_depth': 7,
     #'num_leaves': 35,
-    # 'n_estimators': 1000000,
-    'n_estimators': 500,
+    'n_estimators': 1000000,
     #"colsample_bytree": 0.9,
     'use_best_model': True,
     #'cat_features': ['country'],
@@ -322,7 +321,12 @@ print(test['id'].nunique())
 test = test.groupby('id')['match_id'].apply(list).reset_index()
 test['matches'] = test['match_id'].apply(lambda x: ' '.join(set(x)))
 
-id2poi = get_id2poi(test)
-poi2ids = get_poi2ids(test)
+train = pd.read_csv('input/train.csv')
+
+id2poi = get_id2poi(train)
+poi2ids = get_poi2ids(train)
+
+del train; gc.collect()
+
 logger.info(f"IoU: {get_score(test):.6f}")
 
