@@ -132,6 +132,10 @@ class CFG:
     #max_len = 180
 
 
+NUM_NEIGHBOR = 20
+SEED = 2022
+THRESHOLD = 0.5
+NUM_SPLIT = 5
 TRAIN_FEATURES = ['kdist',
                 'kneighbors',
                 'kdist_country',
@@ -218,10 +222,10 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 print('load data')
 train_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
 
-#len_pos = len(train_pos)
-#len_neg_use = len_pos * 2
+len_pos = len(train_pos)
+len_neg_use = len_pos * 1
 
-train_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv') #, nrows=len_neg_use)
+train_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv', nrows=len_neg_use)
 
 train = pd.concat([
     train_pos, train_neg
@@ -233,8 +237,12 @@ print(train[TRAIN_FEATURES].shape)
 print(train[TRAIN_FEATURES].head())
 
 
+#sys.exit()
+
+
 #kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
-kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
+#kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
+kf = GroupKFold(n_splits=CFG.n_splits)
 for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(X=train, y=train["target"], groups=train["id"]))):
     train.loc[val_idx, "fold"] = i
 
@@ -245,16 +253,13 @@ for i in range(CFG.n_splits):
     print()
 
 
-# sys.exit()
-
-
 import catboost
 # from catboost import CatBoostClassifier, Pool
 
 def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
              n_class=None, model_dir=None, folds=None):
     models = []
-    # oof = np.zeros((len(y), n_class), dtype=np.float64)
+    #oof = np.zeros((len(y), n_class), dtype=np.float64)
     oof = np.zeros((len(y)), dtype=np.float64)
 
     for i in tqdm(range(CFG.n_splits)):
@@ -265,8 +270,8 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         X_valid, y_valid = X.iloc[val_idx], y.iloc[val_idx]
 
         if model_dir is None:
-            # model = catboost.CatBoostClassifier(**params)
-            model = catboost.CatBoostRegressor(**params)
+            model = catboost.CatBoostClassifier(**params)
+            #model = catboost.CatBoostRegressor(**params)
             model.fit(
                 X_train, y_train,
                 #cat_features=categorical_features,
@@ -281,8 +286,8 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
             with open(f'{model_dir}/cat_fold{i}.pkl', 'rb') as f:
                 model = pickle.load(f)
 
-        # pred = model.predict_proba(X_valid)
-        pred = model.predict(X_valid)
+        pred = model.predict_proba(X_valid)[:, 1]
+        #pred = model.predict(X_valid)
         oof[val_idx] = pred
         models.append(model)
 
@@ -291,13 +296,13 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         print()
 
     #cv = (oof.argmax(axis=-1) == y).mean()
-    cv = ((oof > 0) == y).mean()
+    cv = ((oof > 0.5) == y).mean()
     logger.info(f"CV-accuracy: {cv}")
     return oof, models
 
 
 params = {
-    'objective': "RMSE", # "MultiClass", # "Logloss",
+    'objective': "Logloss", # "RMSE", # "MultiClass", # "Logloss",
     'learning_rate': 0.2,
     #'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -311,6 +316,8 @@ params = {
     #'cat_features': ['country'],
     #'text_features': ['categories'],
     'task_type': "GPU",
+
+    #'class_weights': {0:1, 1:11}
 }
 
 
@@ -322,7 +329,8 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["target"].astype(int),
 print(oof.shape)
 # np.save(OUTPUT_DIR+'oof.npy', oof)
 
-# models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
+
+models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
 
 test_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
 test_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv')
@@ -331,8 +339,9 @@ test = pd.concat([test_pos, test_neg], 0).reset_index(drop=True)
 
 del test_pos, test_neg; gc.collect()
 
-test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
-test = test[test['pred'] > 0][['id', 'match_id']]
+#test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
+test = test[test['pred'] > 0.5][['id', 'match_id']]
 # test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
@@ -352,3 +361,71 @@ del train; gc.collect()
 
 logger.info(f"IoU: {get_score(test):.6f}")
 
+
+"""
+out_df = pd.DataFrame()
+out_df['id'] = test_data['id'].unique().tolist()
+out_df['match_id'] = out_df['id']
+
+
+## Prediction
+count = 0
+start_row = 0
+pred_df = pd.DataFrame()
+unique_id = test_data['id'].unique().tolist()
+num_split_id = len(unique_id) // NUM_SPLIT
+for k in range(1, NUM_SPLIT + 1):
+    print('Current split: %s' % k)
+    end_row = start_row + num_split_id
+    if k < NUM_SPLIT:
+        cur_id = unique_id[start_row : end_row]
+        cur_data = test_data[test_data['id'].isin(cur_id)]
+    else:
+        cur_id = unique_id[start_row: ]
+        cur_data = test_data[test_data['id'].isin(cur_id)]
+    
+    # add features & model prediction
+    #cur_data = add_features(cur_data)
+
+    # cur_data_cat = Pool(cur_data[TRAIN_FEATURES])
+    cur_data_cat = cur_data[TRAIN_FEATURES]
+    cur_data['pred'] = 0
+
+    for fold in range(CFG.n_splits):
+        cat_model = unpickle(OUTPUT_DIR+f'cat_fold{fold}.pkl')
+        #cur_data['pred'] += cat_model.predict(cur_data_cat)/CFG.n_splits
+        cur_data['pred'] += cat_model.predict(cur_data_cat)/CFG.n_splits
+
+    cur_pred_df = cur_data[cur_data['pred'] > 0][['id', 'match_id']]
+    pred_df = pd.concat([pred_df, cur_pred_df])
+    
+    start_row = end_row
+    count += len(cur_data)
+
+    del cur_data, cur_pred_df
+    gc.collect()
+print(count)
+
+out_df = pd.concat([out_df, pred_df])
+out_df = out_df.groupby('id')['match_id'].\
+                        apply(list).reset_index()
+out_df['matches'] = out_df['match_id'].apply(lambda x: ' '.join(set(x)))
+
+print(out_df['id'].nunique())
+
+#out_df = post_process(out_df)
+#print('Unique id: %s' % len(out_df))
+print(out_df.head(10))
+
+#out_df['matches'] = out_df['matches']+' '+out_df['id']
+#out_df['matches'] = out_df['matches'].map(lambda x: ' '.join(set(x.split())))
+
+train = pd.read_csv('input/train.csv')
+
+id2poi = get_id2poi(train)
+poi2ids = get_poi2ids(train)
+
+del train; gc.collect()
+
+logger.info(f"IoU: {get_score(out_df):.6f}")
+"""
