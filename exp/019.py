@@ -80,37 +80,6 @@ def post_process(df):
     return df
 
 
-def add_sep_token(df):
-    # Before concatenation, fill NAN with unknown
-    df.fillna('unknown', inplace = True)
-    df['text'] = \
-      df['near_name_0'] + '[SEP]' + df['near_address_0'] + '[SEP]' + df['near_city_0'] + '[SEP]' \
-    + df['near_state_0'] + '[SEP]' + df['near_country_0'] + '[SEP]' + df['near_url_0'] + '[SEP]' + df['near_categories_0'] + '[SEP]' \
-    + df['near_name_1'] + '[SEP]' + df['near_address_1'] + '[SEP]' + df['near_city_1'] + '[SEP]' \
-    + df['near_state_1'] + '[SEP]' + df['near_country_1'] + '[SEP]' + df['near_url_1'] + '[SEP]' + df['near_categories_1'] + '[SEP]' \
-    + df['near_name_2'] + '[SEP]' + df['near_address_2'] + '[SEP]' + df['near_city_2'] + '[SEP]' \
-    + df['near_state_2'] + '[SEP]' + df['near_country_2'] + '[SEP]' + df['near_url_2'] + '[SEP]' + df['near_categories_2'] \
-    + df['near_name_3'] + '[SEP]' + df['near_address_3'] + '[SEP]' + df['near_city_3'] + '[SEP]' \
-    + df['near_state_3'] + '[SEP]' + df['near_country_3'] + '[SEP]' + df['near_url_3'] + '[SEP]' + df['near_categories_3'] + '[SEP]' \
-    + df['near_name_4'] + '[SEP]' + df['near_address_4'] + '[SEP]' + df['near_city_4'] + '[SEP]' \
-    + df['near_state_4'] + '[SEP]' + df['near_country_4'] + '[SEP]' + df['near_url_4'] + '[SEP]' + df['near_categories_4'] \
-    + df['near_name_5'] + '[SEP]' + df['near_address_5'] + '[SEP]' + df['near_city_5'] + '[SEP]' \
-    + df['near_state_5'] + '[SEP]' + df['near_country_5'] + '[SEP]' + df['near_url_5'] + '[SEP]' + df['near_categories_5'] + '[SEP]' \
-    + df['near_name_6'] + '[SEP]' + df['near_address_6'] + '[SEP]' + df['near_city_6'] + '[SEP]' \
-    + df['near_state_6'] + '[SEP]' + df['near_country_6'] + '[SEP]' + df['near_url_6'] + '[SEP]' + df['near_categories_6'] \
-    + df['near_name_7'] + '[SEP]' + df['near_address_7'] + '[SEP]' + df['near_city_7'] + '[SEP]' \
-    + df['near_state_7'] + '[SEP]' + df['near_country_7'] + '[SEP]' + df['near_url_7'] + '[SEP]' + df['near_categories_7'] + '[SEP]' \
-    + df['near_name_8'] + '[SEP]' + df['near_address_8'] + '[SEP]' + df['near_city_8'] + '[SEP]' \
-    + df['near_state_8'] + '[SEP]' + df['near_country_8'] + '[SEP]' + df['near_url_8'] + '[SEP]' + df['near_categories_8'] \
-    + df['near_name_9'] + '[SEP]' + df['near_address_9'] + '[SEP]' + df['near_city_9'] + '[SEP]' \
-    + df['near_state_9'] + '[SEP]' + df['near_country_9'] + '[SEP]' + df['near_url_9'] + '[SEP]' + df['near_categories_9']
-    
-    for i in range(10):
-        del df[f'near_name_{i}'], df[f'near_address_{i}'], df[f'near_city_{i}'], df[f'near_state_{i}'], df[f'near_country_{i}'], df[f'near_url_{i}'], df[f'near_categories_{i}']
-        gc.collect()
-    return df
-
-
 class CFG:
     EXP_ID = '019'
     seed = 71
@@ -124,8 +93,7 @@ class CFG:
     DEBUG = False # True
     target = "point_of_interest"
     n_neighbors = 10
-    n_splits = 3
-    folds = [0, 1, 2]
+    n_splits = 5 # 3
     apex = True
     #model_name = 'xlm-roberta-base'
     #tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -218,7 +186,6 @@ set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
-"""
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
 print(train1['label'].value_counts())
@@ -247,10 +214,6 @@ print(train[TRAIN_FEATURES].shape)
 print(train[TRAIN_FEATURES].head())
 
 
-#sys.exit()
-
-
-#kf = StratifiedKFold(n_splits=CFG.n_splits, shuffle=True, random_state=CFG.seed)
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
 kf = GroupKFold(n_splits=CFG.n_splits)
 for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(X=train, y=train["label"], groups=train["id"]))):
@@ -326,8 +289,6 @@ params = {
     #'cat_features': ['country'],
     #'text_features': ['categories'],
     'task_type': "GPU",
-
-    #'class_weights': {0:1, 1:11}
 }
 
 
@@ -338,8 +299,7 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
 
-"""
-models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
+models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
 test1 = pd.read_csv('input/valid_data1.csv')
 test2 = pd.read_csv('input/valid_data2.csv')
@@ -356,7 +316,6 @@ del test1, test2, test3, test4, test5; gc.collect()
 test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
 #test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
 test = test[test['pred'] > 0][['id', 'match_id']]
-# test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
@@ -371,14 +330,10 @@ del train; gc.collect()
 
 print(test[['id', 'matches']].head(10))
 
-# test = post_process(test)
-
-#train = pd.read_csv('input/train.csv')
+test = post_process(test)
 
 id2poi = get_id2poi(test)
 poi2ids = get_poi2ids(test)
-
-#del train; gc.collect()
 
 logger.info(f"IoU: {get_score(test):.6f}")
 
