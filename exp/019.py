@@ -218,7 +218,7 @@ set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
-
+"""
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
 print(train1['label'].value_counts())
@@ -341,16 +341,21 @@ print(oof.shape)
 """
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
 
-test_pos = pd.read_csv('input/train_pairs_set_0_target_1.csv')
-test_neg = pd.read_csv('input/train_pairs_set_0_target_0.csv')
+test1 = pd.read_csv('input/valid_data1.csv')
+test2 = pd.read_csv('input/valid_data2.csv')
+test3 = pd.read_csv('input/valid_data3.csv')
+test4 = pd.read_csv('input/valid_data4.csv')
+test5 = pd.read_csv('input/valid_data5.csv')
 
-test = pd.concat([test_pos, test_neg], 0).reset_index(drop=True)
+test = pd.concat([
+    test1, test2, test3, test4, test5
+], 0).reset_index(drop=True)
 
-del test_pos, test_neg; gc.collect()
+del test1, test2, test3, test4, test5; gc.collect()
 
-#test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
-test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
-test = test[test['pred'] > 0.5][['id', 'match_id']]
+test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+#test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
+test = test[test['pred'] > 0][['id', 'match_id']]
 # test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
@@ -377,70 +382,3 @@ poi2ids = get_poi2ids(test)
 
 logger.info(f"IoU: {get_score(test):.6f}")
 
-
-out_df = pd.DataFrame()
-out_df['id'] = test_data['id'].unique().tolist()
-out_df['match_id'] = out_df['id']
-
-
-## Prediction
-count = 0
-start_row = 0
-pred_df = pd.DataFrame()
-unique_id = test_data['id'].unique().tolist()
-num_split_id = len(unique_id) // NUM_SPLIT
-for k in range(1, NUM_SPLIT + 1):
-    print('Current split: %s' % k)
-    end_row = start_row + num_split_id
-    if k < NUM_SPLIT:
-        cur_id = unique_id[start_row : end_row]
-        cur_data = test_data[test_data['id'].isin(cur_id)]
-    else:
-        cur_id = unique_id[start_row: ]
-        cur_data = test_data[test_data['id'].isin(cur_id)]
-    
-    # add features & model prediction
-    #cur_data = add_features(cur_data)
-
-    # cur_data_cat = Pool(cur_data[TRAIN_FEATURES])
-    cur_data_cat = cur_data[TRAIN_FEATURES]
-    cur_data['pred'] = 0
-
-    for fold in range(CFG.n_splits):
-        cat_model = unpickle(OUTPUT_DIR+f'cat_fold{fold}.pkl')
-        #cur_data['pred'] += cat_model.predict(cur_data_cat)/CFG.n_splits
-        cur_data['pred'] += cat_model.predict(cur_data_cat)/CFG.n_splits
-
-    cur_pred_df = cur_data[cur_data['pred'] > 0][['id', 'match_id']]
-    pred_df = pd.concat([pred_df, cur_pred_df])
-    
-    start_row = end_row
-    count += len(cur_data)
-
-    del cur_data, cur_pred_df
-    gc.collect()
-print(count)
-
-out_df = pd.concat([out_df, pred_df])
-out_df = out_df.groupby('id')['match_id'].\
-                        apply(list).reset_index()
-out_df['matches'] = out_df['match_id'].apply(lambda x: ' '.join(set(x)))
-
-print(out_df['id'].nunique())
-
-#out_df = post_process(out_df)
-#print('Unique id: %s' % len(out_df))
-print(out_df.head(10))
-
-#out_df['matches'] = out_df['matches']+' '+out_df['id']
-#out_df['matches'] = out_df['matches'].map(lambda x: ' '.join(set(x.split())))
-
-train = pd.read_csv('input/train.csv')
-
-id2poi = get_id2poi(train)
-poi2ids = get_poi2ids(train)
-
-del train; gc.collect()
-
-logger.info(f"IoU: {get_score(out_df):.6f}")
-"""
