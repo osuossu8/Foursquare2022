@@ -305,8 +305,8 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         pickle.dump(model, open(file, 'wb'))
         print()
 
-    cv = (oof.argmax(axis=-1) == y).mean()
-    #cv = ((oof > 0.5) == y).mean()
+    #cv = (oof.argmax(axis=-1) == y).mean()
+    cv = ((oof > 0) == y).mean()
     logger.info(f"CV-accuracy: {cv}")
     return oof, models
 
@@ -335,9 +335,9 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
                        params=params, n_class=int(train["label"].max() + 1),
                        N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
-
 print(oof.shape)
-# np.save(OUTPUT_DIR+'oof.npy', oof)
+#np.save(OUTPUT_DIR+'oof.npy', oof)
+
 """
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(3)]
 
