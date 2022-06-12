@@ -93,7 +93,7 @@ class CFG:
     DEBUG = False # True
     target = "point_of_interest"
     n_neighbors = 10
-    n_splits = 5 # 3
+    n_splits = 3
     apex = True
     #model_name = 'xlm-roberta-base'
     #tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -206,6 +206,7 @@ train = pd.concat([
     train1, train2, train3, train4, train5
 ], 0).reset_index(drop=True)
 
+
 del train1, train2, train3, train4, train5; gc.collect()
 
 print(train.shape)
@@ -226,11 +227,13 @@ for i in range(CFG.n_splits):
     print()
 
 
-import catboost
-# from catboost import CatBoostClassifier, Pool
+# import catboost
+from catboost import CatBoostRegressor, CatBoostClassifier, Pool
 
-def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
-             n_class=None, model_dir=None, folds=None):
+def fit_cat(X, y, params=None, 
+        es_rounds=20, 
+        seed=42, N_SPLITS=5,
+        n_class=None, model_dir=None, folds=None):
     models = []
     #oof = np.zeros((len(y), n_class), dtype=np.float64)
     oof = np.zeros((len(y)), dtype=np.float64)
@@ -242,14 +245,31 @@ def fit_cat(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         X_train, y_train = X.iloc[trn_idx], y.iloc[trn_idx]
         X_valid, y_valid = X.iloc[val_idx], y.iloc[val_idx]
 
+        train_pool = Pool(
+            X_train, 
+            y_train, 
+            #cat_features=categorical_cols,
+            #text_features=text_cols,
+            #feature_names=list(X_tr)
+        )
+        valid_pool = Pool(
+            X_valid, 
+            y_valid, 
+            #cat_features=categorical_cols,
+            #text_features=text_cols,
+            #feature_names=list(X_tr)
+        )
+
         if model_dir is None:
             #model = catboost.CatBoostClassifier(**params)
-            model = catboost.CatBoostRegressor(**params)
+            model = CatBoostRegressor(**params)
             model.fit(
-                X_train, y_train,
+                train_pool,
+                eval_set=valid_pool,
+                #X_train, y_train,
                 #cat_features=categorical_features,
                 #text_features=['text'],
-                eval_set=[(X_valid, y_valid)],
+                #eval_set=[(X_valid, y_valid)],
                 early_stopping_rounds=es_rounds,
                 # eval_metric='logloss',
     #             verbose=-1)
