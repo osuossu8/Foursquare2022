@@ -185,7 +185,7 @@ if not os.path.exists(OUTPUT_DIR):
 set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
-"""
+
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
 print(train1['label'].value_counts())
@@ -232,7 +232,7 @@ from catboost import CatBoostRegressor, CatBoostClassifier, Pool
 import lightgbm as lgbm
 
 def fit_lgbm(X, y, params=None, 
-        es_rounds=20, 
+        es_rounds=10, 
         seed=42, N_SPLITS=5,
         n_class=None, model_dir=None, folds=None):
     models = []
@@ -252,7 +252,7 @@ def fit_lgbm(X, y, params=None,
                 X_train, y_train,
                 eval_set=[(X_valid, y_valid)],
                 early_stopping_rounds=es_rounds,
-                eval_metric='rmse',
+                #eval_metric='rmse',
     #             verbose=-1)
                 verbose=100)
 
@@ -276,8 +276,10 @@ def fit_lgbm(X, y, params=None,
 
 
 params = {
-    'objective': 'regression',
-    'boosting': 'gbdt',
+    'objective': 'binary',
+    'metric': 'binary_logloss',
+    # 'objective': 'regression',
+    #'boosting': 'gbdt',
     'learning_rate': 0.2,
     'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -296,8 +298,8 @@ oof, models = fit_lgbm(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
-"""
-models = [unpickle(OUTPUT_DIR+f'lgbm_fold{i}.pkl') for i in [0,1]]#range(CFG.n_splits)]
+
+models = [unpickle(OUTPUT_DIR+f'lgbm_fold{i}.pkl') for i in range(CFG.n_splits)]
 
 #test = pd.concat([
 #    test1, test2, test3, test4, test5
@@ -317,9 +319,10 @@ for test_path in tqdm([
     test = pd.read_csv(test_path)
     print(test.shape)
 
+    test['pred'] = 0
     for lgbm_model in tqdm(models):
 
-        test['pred'] += lgbm_model.predict(test[TRAIN_FEATURES])/2
+        test['pred'] += lgbm_model.predict(test[TRAIN_FEATURES])/CFG.n_splits
 
     #test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
     res_df.append(test[test['pred'] > 0][['id', 'match_id']])
