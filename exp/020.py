@@ -299,21 +299,35 @@ print(oof.shape)
 """
 models = [unpickle(OUTPUT_DIR+f'lgbm_fold{i}.pkl') for i in [0,1]]#range(CFG.n_splits)]
 
-test1 = pd.read_csv('input/valid_data1.csv')
-test2 = pd.read_csv('input/valid_data2.csv')
-test3 = pd.read_csv('input/valid_data3.csv')
-test4 = pd.read_csv('input/valid_data4.csv')
-test5 = pd.read_csv('input/valid_data5.csv')
+#test = pd.concat([
+#    test1, test2, test3, test4, test5
+#], 0).reset_index(drop=True)
 
-test = pd.concat([
-    test1, test2, test3, test4, test5
-], 0).reset_index(drop=True)
+#del test1, test2, test3, test4, test5; gc.collect()
 
-del test1, test2, test3, test4, test5; gc.collect()
+res_df = []
+for test_path in tqdm([
+    'input/valid_data1.csv',
+    'input/valid_data2.csv',
+    'input/valid_data3.csv',
+    'input/valid_data4.csv',
+    'input/valid_data5.csv'
+    ]):
 
-test['pred'] = np.mean([lgbm_model.predict(test[TRAIN_FEATURES]) for lgbm_model in models], 0)
-#test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
-test = test[test['pred'] > 0][['id', 'match_id']]
+    test = pd.read_csv(test_path)
+    print(test.shape)
+
+    for lgbm_model in tqdm(models):
+
+        test['pred'] += lgbm_model.predict(test[TRAIN_FEATURES])/2
+
+    #test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
+    res_df.append(test[test['pred'] > 0][['id', 'match_id']])
+
+    del test; gc.collect()
+
+test = pd.concat(res_df, 0).reset_index(drop=True)
+
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
