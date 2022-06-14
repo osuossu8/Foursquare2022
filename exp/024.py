@@ -277,7 +277,7 @@ def fit_cat(X, y, params=None,
         )
 
         if model_dir is None:
-            model = catboost.CatBoostClassifier(**params)
+            model = CatBoostClassifier(**params)
             #model = CatBoostRegressor(**params)
             model.fit(
                 train_pool,
