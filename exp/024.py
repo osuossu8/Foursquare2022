@@ -189,7 +189,7 @@ if not os.path.exists(OUTPUT_DIR):
 set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
-
+"""
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
 print(train1['label'].value_counts())
@@ -329,6 +329,9 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
+"""
+
+id_2_text = unpickle('features/id_2_text.pkl')
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
