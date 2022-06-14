@@ -251,7 +251,7 @@ def fit_cat(X, y, params=None,
         seed=42, N_SPLITS=5,
         n_class=None, model_dir=None, folds=None):
     models = []
-    #oof = np.zeros((len(y), n_class), dtype=np.float64)
+    #oof = np.zeros((len(y), n_class), dtype=np.float16)
     oof = np.zeros((len(y)), dtype=np.float16)
 
     for i in tqdm(range(CFG.n_splits)):
@@ -277,8 +277,8 @@ def fit_cat(X, y, params=None,
         )
 
         if model_dir is None:
-            #model = catboost.CatBoostClassifier(**params)
-            model = CatBoostRegressor(**params)
+            model = catboost.CatBoostClassifier(**params)
+            #model = CatBoostRegressor(**params)
             model.fit(
                 train_pool,
                 eval_set=valid_pool,
@@ -290,8 +290,8 @@ def fit_cat(X, y, params=None,
             with open(f'{model_dir}/cat_fold{i}.pkl', 'rb') as f:
                 model = pickle.load(f)
 
-        #pred = model.predict_proba(X_valid)[:, 1]
-        pred = model.predict(X_valid)
+        pred = model.predict_proba(X_valid)[:, 1]
+        #pred = model.predict(X_valid)
         oof[val_idx] = pred
         models.append(model)
 
@@ -306,7 +306,7 @@ def fit_cat(X, y, params=None,
 
 
 params = {
-    'objective': "RMSE", # "MultiClass", # "Logloss",
+    'objective': "Logloss", # "RMSE", # "MultiClass",
     'learning_rate': 0.2,
     #'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -347,9 +347,9 @@ del test1, test2, test3, test4, test5; gc.collect()
 test['text_1'] = test['id'].map(id_2_text)
 test['text_2'] = test['match_id'].map(id_2_text)
 
-test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+#test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
 print(test[['id', 'match_id', 'pred']])
-#test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
 test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
