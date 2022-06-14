@@ -289,7 +289,7 @@ def fit_cat(X, y, params=None,
         print()
 
     #cv = (oof.argmax(axis=-1) == y).mean()
-    cv = ((oof > 0) == y).mean()
+    cv = ((oof > 0.5) == y).mean()
     logger.info(f"CV-accuracy: {cv}")
     return oof, models
 
@@ -334,11 +334,14 @@ test = pd.concat([
 del test1, test2, test3, test4, test5; gc.collect()
 
 test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
+print(test[['id', 'match_id', 'pred']])
 #test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
-test = test[test['pred'] > 0][['id', 'match_id']]
+test = test[test['pred'] > 0.5][['id', 'match_id']]
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
+print(test.head())
+
 test['matches'] = test['match_id'].apply(lambda x: ' '.join(set(x)))
 test['matches'] = test['matches']+' '+test['id']
 test['matches'] = test['matches'].map(lambda x: ' '.join(set(x.split())))
@@ -348,9 +351,9 @@ test = pd.merge(test, train, on='id', how='inner')
 
 del train; gc.collect()
 
-print(test[['id', 'matches']].head(10))
-
 test = post_process(test)
+
+print(test[['id', 'matches']].head(10))
 
 id2poi = get_id2poi(test)
 poi2ids = get_poi2ids(test)
