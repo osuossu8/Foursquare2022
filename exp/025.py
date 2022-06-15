@@ -349,10 +349,14 @@ del test1, test2, test3, test4, test5; gc.collect()
 test['text_1'] = test['id'].map(id_2_text)
 test['text_2'] = test['match_id'].map(id_2_text)
 
+del id_2_text; gc.collect()
+
 #test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
 test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
 print(test[['id', 'match_id', 'pred']])
 test = test[test['pred'] > 0.5][['id', 'match_id']]
+gc.collect()
+
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
