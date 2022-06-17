@@ -102,7 +102,7 @@ class USEVectorizer:
         print('get vectors ...')
         vectors = []
         for batch in tqdm(batches):
-            vec = self.model(batch)['outputs'].numpy()
+            vec = self.model(batch).numpy()
             vectors.append(vec)
         vectors = np.concatenate(vectors, 0).astype(np.float16)
         return vectors
