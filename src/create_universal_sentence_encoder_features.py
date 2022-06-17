@@ -82,6 +82,8 @@ for v in vec_columns:
     data['text'] += data[v].fillna('nan') + ' '
 
 
+import tensorflow_hub as hub
+
 class USEVectorizer:
     def __init__(self):
         self.url = "https://tfhub.dev/google/universal-sentence-encoder/4"
