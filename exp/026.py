@@ -176,7 +176,7 @@ TRAIN_FEATURES = ['kdist',
                 
                 'text_1',
                 'text_2',
-] + [f'use_vector1_{i}' for i in range(512)] + [f'use_vector2_{i}' for i in range(512)]
+] + [f'use_vector_{i}' for i in range(512)]
 
 
 import os
@@ -192,18 +192,23 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
+train1[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_train_data1.pkl'))
 print(train1['label'].value_counts())
 
 train2 = pd.read_csv('input/train_data2.csv')
+train2[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_train_data2.pkl'))
 print(train2['label'].value_counts())
 
 train3 = pd.read_csv('input/train_data3.csv')
+train3[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_train_data2.pkl'))
 print(train3['label'].value_counts())
 
 train4 = pd.read_csv('input/train_data4.csv')
+train4[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_train_data4.pkl'))
 print(train4['label'].value_counts())
 
 train5 = pd.read_csv('input/train_data5.csv')
+train5[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_train_data5.pkl'))
 print(train5['label'].value_counts())
 
 train = pd.concat([
@@ -221,13 +226,6 @@ train['text_2'] = train['match_id'].map(id_2_text)
 
 del id_2_text; gc.collect()
 
-
-id_2_text_use_vector = unpickle('features/id_2_text_use_vector.pkl')
-
-train[[f'use_vector1_{i}' for i in range(512)]] = np.stack(train['id'].map(lambda x: id_2_text_use_vector[x]))
-train[[f'use_vector2_{i}' for i in range(512)]] = np.stack(train['match_id'].map(lambda x: id_2_text_use_vector[x]))
-
-del id_2_text_use_vector; gc.collect()
 
 print(train.shape)
 print(train['label'].value_counts())
@@ -343,10 +341,19 @@ del oof; gc.collect()
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
 test1 = pd.read_csv('input/valid_data1.csv')
+test1[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_valid_data1.pkl'))
+
 test2 = pd.read_csv('input/valid_data2.csv')
+test2[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_valid_data2.pkl'))
+
 test3 = pd.read_csv('input/valid_data3.csv')
+test3[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_valid_data3.pkl'))
+
 test4 = pd.read_csv('input/valid_data4.csv')
+test4[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_valid_data4.pkl'))
+
 test5 = pd.read_csv('input/valid_data5.csv')
+test5[[f'use_vector_{i}' for i in range(512)]] = np.stack(unpickle('features/id_2_text_use_vector_valid_data5.pkl'))
 
 test = pd.concat([
     test1, test2, test3, test4, test5
@@ -360,13 +367,6 @@ test['text_1'] = test['id'].map(id_2_text)
 test['text_2'] = test['match_id'].map(id_2_text)
 
 del id_2_text; gc.collect()
-
-id_2_text_use_vector = unpickle('features/id_2_text_use_vector.pkl')
-
-test[[f'use_vector1_{i}' for i in range(512)]] = np.stack(test['id'].map(lambda x: id_2_text_use_vector[x]))
-test[[f'use_vector2_{i}' for i in range(512)]] = np.stack(test['match_id'].map(lambda x: id_2_text_use_vector[x]))
-
-del id_2_text_use_vector; gc.collect()
 
 #test['pred'] = np.mean([cat_model.predict(test[TRAIN_FEATURES]) for cat_model in models], 0)
 test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
