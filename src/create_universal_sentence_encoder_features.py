@@ -50,6 +50,8 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
+from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle,
+
 # https://www.kaggle.com/code/guoyonfan/training-data-for-binary-lgb-baseline-0-834/notebook
 
 ## Parameters
@@ -102,9 +104,9 @@ class USEVectorizer:
         print('get vectors ...')
         vectors = []
         for batch in tqdm(batches):
-            vec = self.model(batch).numpy()
+            vec = self.model(batch).numpy().astype(np.float16)
             vectors.append(vec)
-        vectors = np.concatenate(vectors, 0).astype(np.float16)
+        vectors = np.concatenate(vectors, 0)
         return vectors
 
 
