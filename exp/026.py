@@ -224,8 +224,8 @@ del id_2_text; gc.collect()
 
 id_2_text_use_vector = unpickle('features/id_2_text_use_vector.pkl')
 
-train[[f'use_vector1_{i}' for i in range(512)]] = train['id'].map(id_2_text_use_vector)
-train[[f'use_vector2_{i}' for i in range(512)]] = train['match_id'].map(id_2_text_use_vector)
+train[[f'use_vector1_{i}' for i in range(512)]] = np.stack(train['id'].map(lambda x: id_2_text_use_vector[x]))
+train[[f'use_vector2_{i}' for i in range(512)]] = np.stack(train['match_id'].map(lambda x: id_2_text_use_vector[x]))
 
 del id_2_text_use_vector; gc.collect()
 
@@ -363,8 +363,8 @@ del id_2_text; gc.collect()
 
 id_2_text_use_vector = unpickle('features/id_2_text_use_vector.pkl')
 
-test[[f'use_vector1_{i}' for i in range(512)]] = test['id'].map(id_2_text_use_vector)
-test[[f'use_vector2_{i}' for i in range(512)]] = test['match_id'].map(id_2_text_use_vector)
+test[[f'use_vector1_{i}' for i in range(512)]] = np.stack(test['id'].map(lambda x: id_2_text_use_vector[x]))
+test[[f'use_vector2_{i}' for i in range(512)]] = np.stack(test['match_id'].map(lambda x: id_2_text_use_vector[x]))
 
 del id_2_text_use_vector; gc.collect()
 
