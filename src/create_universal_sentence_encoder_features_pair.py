@@ -124,7 +124,7 @@ for path in tqdm([
     vectors = USEVectorizer().get_vectors(data['text'].values) 
     print(vectors.shape)
 
-    id_2_text_use_vector = {k:v for k, v in zip(data['id'].values, vectors)}
+    #id_2_text_use_vector = {k:v for k, v in zip(data['id'].values, vectors)}
 
-    to_pickle(f'features/id_2_text_use_vector_{path_prefix}.pkl', id_2_text_use_vector)
+    to_pickle(f'features/text_use_vector_{path_prefix}.pkl', vectors)
 
