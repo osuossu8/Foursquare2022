@@ -50,7 +50,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
-from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle,
+from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 # https://www.kaggle.com/code/guoyonfan/training-data-for-binary-lgb-baseline-0-834/notebook
 
