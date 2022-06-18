@@ -80,6 +80,42 @@ def post_process(df):
     return df
 
 
+def reduce_mem_usage(df):
+    start_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage of dataframe is {:.2f} MB'.format(start_mem))
+
+    for col in df.columns:
+        col_type = df[col].dtype
+
+        if col_type != object:
+            c_min = df[col].min()
+            c_max = df[col].max()
+            if str(col_type)[:3] == 'int':
+                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                    df[col] = df[col].astype(np.int8)
+                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    df[col] = df[col].astype(np.int16)
+                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    df[col] = df[col].astype(np.int32)
+                elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
+                    df[col] = df[col].astype(np.int64)
+            else:
+                if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
+                    df[col] = df[col].astype(np.float16)
+                elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
+                    df[col] = df[col].astype(np.float32)
+                else:
+                    df[col] = df[col].astype(np.float64)
+        else:
+            df[col] = df[col].astype('category')
+
+    end_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage after optimization is: {:.2f} MB'.format(end_mem))
+    print('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
+
+    return df
+
+
 class CFG:
     EXP_ID = '026'
     seed = 71
@@ -192,22 +228,27 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
+train1 = reduce_mem_usage(train1)
 train1[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data1.pkl').astype(np.float16)
 print(train1['label'].value_counts())
 
 train2 = pd.read_csv('input/train_data2.csv')
+train2 = reduce_mem_usage(train2)
 train2[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data2.pkl').astype(np.float16)
 print(train2['label'].value_counts())
 
 train3 = pd.read_csv('input/train_data3.csv')
+train3 = reduce_mem_usage(train3)
 train3[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data3.pkl').astype(np.float16)
 print(train3['label'].value_counts())
 
 train4 = pd.read_csv('input/train_data4.csv')
+train4 = reduce_mem_usage(train4)
 train4[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data4.pkl').astype(np.float16)
 print(train4['label'].value_counts())
 
 train5 = pd.read_csv('input/train_data5.csv')
+train5 = reduce_mem_usage(train5)
 train5[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data5.pkl').astype(np.float16)
 print(train5['label'].value_counts())
 
