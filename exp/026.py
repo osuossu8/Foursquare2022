@@ -174,9 +174,9 @@ TRAIN_FEATURES = ['kdist',
                 'country_leven',
                 'country_nleven',
                 
-                'text_1',
-                'text_2',
-] + [f'use_vector_{i}' for i in range(32)]
+                #'text_1',
+                #'text_2',
+] + [f'use_vector_{i}' for i in range(512)]
 
 
 import os
@@ -192,23 +192,23 @@ logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 print('load data')
 train1 = pd.read_csv('input/train_data1.csv')
-train1[[f'use_vector_{i}' for i in range(32)]] = unpickle('features/text_use_vector_train_data1.pkl')[:, :32].astype(np.float16)
+train1[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data1.pkl').astype(np.float16)
 print(train1['label'].value_counts())
 
 train2 = pd.read_csv('input/train_data2.csv')
-train2[[f'use_vector_{i}' for i in range(32)]] = unpickle('features/text_use_vector_train_data2.pkl')[:, :32].astype(np.float16)
+train2[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data2.pkl').astype(np.float16)
 print(train2['label'].value_counts())
 
 train3 = pd.read_csv('input/train_data3.csv')
-train3[[f'use_vector_{i}' for i in range(32)]] = unpickle('features/text_use_vector_train_data3.pkl')[:, :32].astype(np.float16)
+train3[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data3.pkl').astype(np.float16)
 print(train3['label'].value_counts())
 
 train4 = pd.read_csv('input/train_data4.csv')
-train4[[f'use_vector_{i}' for i in range(32)]] = unpickle('features/text_use_vector_train_data4.pkl')[:, :32].astype(np.float16)
+train4[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data4.pkl').astype(np.float16)
 print(train4['label'].value_counts())
 
 train5 = pd.read_csv('input/train_data5.csv')
-train5[[f'use_vector_{i}' for i in range(32)]] = unpickle('features/text_use_vector_train_data5.pkl')[:, :32].astype(np.float16)
+train5[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data5.pkl').astype(np.float16)
 print(train5['label'].value_counts())
 
 train = pd.concat([
@@ -219,12 +219,12 @@ train = pd.concat([
 del train1, train2, train3, train4, train5; gc.collect()
 
 
-id_2_text = unpickle('features/id_2_text.pkl')
+#id_2_text = unpickle('features/id_2_text.pkl')
 
-train['text_1'] = train['id'].map(id_2_text)
-train['text_2'] = train['match_id'].map(id_2_text)
+#train['text_1'] = train['id'].map(id_2_text)
+#train['text_2'] = train['match_id'].map(id_2_text)
 
-del id_2_text; gc.collect()
+#del id_2_text; gc.collect()
 
 
 print(train.shape)
@@ -272,14 +272,14 @@ def fit_cat(X, y, params=None,
             X_train, 
             y_train, 
             #cat_features=categorical_cols,
-            text_features=text_cols,
+            #text_features=text_cols,
             #feature_names=list(X_tr)
         )
         valid_pool = Pool(
             X_valid, 
             y_valid, 
             #cat_features=categorical_cols,
-            text_features=text_cols,
+            #text_features=text_cols,
             #feature_names=list(X_tr)
         )
 
@@ -340,7 +340,7 @@ del oof; gc.collect()
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
-id_2_text = unpickle('features/id_2_text.pkl')
+#id_2_text = unpickle('features/id_2_text.pkl')
 
 res_df = []
 for test_path in tqdm([
@@ -353,10 +353,10 @@ for test_path in tqdm([
 
     test_path_prefix = test_path.split('/')[-1].split('.')[0]
     test = pd.read_csv(test_path)
-    test[[f'use_vector_{i}' for i in range(32)]] = unpickle(f'features/text_use_vector_{test_path_prefix}.pkl')[:, :32].astype(np.float16)
+    test[[f'use_vector_{i}' for i in range(512)]] = unpickle(f'features/text_use_vector_{test_path_prefix}.pkl').astype(np.float16)
 
-    test['text_1'] = test['id'].map(id_2_text)
-    test['text_2'] = test['match_id'].map(id_2_text)
+    #test['text_1'] = test['id'].map(id_2_text)
+    #test['text_2'] = test['match_id'].map(id_2_text)
     print(test.shape)
 
     test['pred'] = 0
