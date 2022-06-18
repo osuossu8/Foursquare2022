@@ -106,6 +106,11 @@ def cos_sim_matrix(matrix1, matrix2):
     return d / norm1 / norm2
 
 
+def get_batches(l, n):
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
+
+
 id_2_text_use_vector = unpickle('features/id_2_text_use_vector.pkl')
 
 for path in tqdm([
@@ -124,12 +129,15 @@ for path in tqdm([
     print(path_prefix)
 
     data = pd.read_csv(path)
-    vec1 = data['id'].map(id_2_text_use_vector)
-    vec2 = data['match_id'].map(id_2_text_use_vector)
+    batches = list(get_batches(data, 2048))
 
-    sims = cos_sim_matrix(vec1, vec2)
+    res_sims = []
+    for batch in tqdm(batches):
+        vec1 = np.stack(batch['id'].map(id_2_text_use_vector))
+        vec2 = np.stack(batch['match_id'].map(id_2_text_use_vector)).T
+        sims = cos_sim_matrix(vec1, vec2)
+        res_sims.append(sims)
 
-    print(sims.shape)
-
-    to_pickle(f'features/sim_text_use_vector_{path_prefix}.pkl', sims)
+    res_sims = np.concatenate(res_sims)
+    to_pickle(f'features/sim_text_use_vector_{path_prefix}.pkl', res_sims)
 
