@@ -210,8 +210,8 @@ TRAIN_FEATURES = ['kdist',
                 'country_leven',
                 'country_nleven',
                 
-                #'text_1',
-                #'text_2',
+                'text_1',
+                'text_2',
 ] + [f'use_vector_{i}' for i in range(512)]
 
 
@@ -242,30 +242,30 @@ train3 = reduce_mem_usage(train3)
 train3[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data3.pkl').astype(np.float16)
 print(train3['label'].value_counts())
 
-train4 = pd.read_csv('input/train_data4.csv')
-train4 = reduce_mem_usage(train4)
-train4[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data4.pkl').astype(np.float16)
-print(train4['label'].value_counts())
+#train4 = pd.read_csv('input/train_data4.csv')
+#train4 = reduce_mem_usage(train4)
+#train4[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data4.pkl').astype(np.float16)
+#print(train4['label'].value_counts())
 
-train5 = pd.read_csv('input/train_data5.csv')
-train5 = reduce_mem_usage(train5)
-train5[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data5.pkl').astype(np.float16)
-print(train5['label'].value_counts())
+#train5 = pd.read_csv('input/train_data5.csv')
+#train5 = reduce_mem_usage(train5)
+#train5[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data5.pkl').astype(np.float16)
+#print(train5['label'].value_counts())
 
 train = pd.concat([
-    train1, train2, train3, train4, train5
+    train1, train2, train3, #train4, train5
 ], 0).reset_index(drop=True)
 
 
-del train1, train2, train3, train4, train5; gc.collect()
+del train1, train2, train3; gc.collect() # , train4, train5; gc.collect()
 
 
-#id_2_text = unpickle('features/id_2_text.pkl')
+id_2_text = unpickle('features/id_2_text.pkl')
 
-#train['text_1'] = train['id'].map(id_2_text)
-#train['text_2'] = train['match_id'].map(id_2_text)
+train['text_1'] = train['id'].map(id_2_text)
+train['text_2'] = train['match_id'].map(id_2_text)
 
-#del id_2_text; gc.collect()
+del id_2_text; gc.collect()
 
 
 print(train.shape)
@@ -313,14 +313,14 @@ def fit_cat(X, y, params=None,
             X_train, 
             y_train, 
             #cat_features=categorical_cols,
-            #text_features=text_cols,
+            text_features=text_cols,
             #feature_names=list(X_tr)
         )
         valid_pool = Pool(
             X_valid, 
             y_valid, 
             #cat_features=categorical_cols,
-            #text_features=text_cols,
+            text_features=text_cols,
             #feature_names=list(X_tr)
         )
 
@@ -381,7 +381,7 @@ del oof; gc.collect()
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
-#id_2_text = unpickle('features/id_2_text.pkl')
+id_2_text = unpickle('features/id_2_text.pkl')
 
 res_df = []
 for test_path in tqdm([
@@ -396,8 +396,8 @@ for test_path in tqdm([
     test = pd.read_csv(test_path)
     test[[f'use_vector_{i}' for i in range(512)]] = unpickle(f'features/text_use_vector_{test_path_prefix}.pkl').astype(np.float16)
 
-    #test['text_1'] = test['id'].map(id_2_text)
-    #test['text_2'] = test['match_id'].map(id_2_text)
+    test['text_1'] = test['id'].map(id_2_text)
+    test['text_2'] = test['match_id'].map(id_2_text)
     print(test.shape)
 
     test['pred'] = 0
