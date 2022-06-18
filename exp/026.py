@@ -199,9 +199,9 @@ train2 = pd.read_csv('input/train_data2.csv')
 train2[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data2.pkl').astype(np.float16)
 print(train2['label'].value_counts())
 
-train3 = pd.read_csv('input/train_data3.csv')
-train3[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data3.pkl').astype(np.float16)
-print(train3['label'].value_counts())
+#train3 = pd.read_csv('input/train_data3.csv')
+#train3[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data3.pkl').astype(np.float16)
+#print(train3['label'].value_counts())
 
 #train4 = pd.read_csv('input/train_data4.csv')
 #train4[[f'use_vector_{i}' for i in range(512)]] = unpickle('features/text_use_vector_train_data4.pkl').astype(np.float16)
@@ -212,11 +212,11 @@ print(train3['label'].value_counts())
 #print(train5['label'].value_counts())
 
 train = pd.concat([
-    train1, train2, train3, #train4, train5
+    train1, train2, #train3, train4, train5
 ], 0).reset_index(drop=True)
 
 
-del train1, train2, train3; gc.collect() #, train4, train5; gc.collect()
+del train1, train2; gc.collect() #, train3; gc.collect() #, train4, train5; gc.collect()
 
 
 id_2_text = unpickle('features/id_2_text.pkl')
