@@ -80,6 +80,42 @@ def post_process(df):
     return df
 
 
+def reduce_mem_usage(df):
+    start_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage of dataframe is {:.2f} MB'.format(start_mem))
+
+    for col in df.columns:
+        col_type = df[col].dtype
+
+        if col_type != object:
+            c_min = df[col].min()
+            c_max = df[col].max()
+            if str(col_type)[:3] == 'int':
+                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                    df[col] = df[col].astype(np.int8)
+                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    df[col] = df[col].astype(np.int16)
+                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    df[col] = df[col].astype(np.int32)
+                elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
+                    df[col] = df[col].astype(np.int64)
+            else:
+                if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
+                    df[col] = df[col].astype(np.float16)
+                elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
+                    df[col] = df[col].astype(np.float32)
+                else:
+                    df[col] = df[col].astype(np.float64)
+        else:
+            df[col] = df[col].astype('category')
+
+    end_mem = df.memory_usage().sum() / 1024**2
+    print('Memory usage after optimization is: {:.2f} MB'.format(end_mem))
+    print('Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
+
+    return df
+
+
 class CFG:
     EXP_ID = '027'
     seed = 71
@@ -191,15 +227,15 @@ device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 print('load data')
-train1 = pd.read_csv('input/train_data1.csv', usecols=['id', 'match_id', 'label'])
+train1 = pd.read_csv('input/train_data1.csv')
 
-train2 = pd.read_csv('input/train_data2.csv', usecols=['id', 'match_id', 'label'])
+train2 = pd.read_csv('input/train_data2.csv')
 
-train3 = pd.read_csv('input/train_data3.csv', usecols=['id', 'match_id', 'label'])
+train3 = pd.read_csv('input/train_data3.csv')
 
-train4 = pd.read_csv('input/train_data4.csv', usecols=['id', 'match_id', 'label'])
+train4 = pd.read_csv('input/train_data4.csv')
 
-train5 = pd.read_csv('input/train_data5.csv', usecols=['id', 'match_id', 'label'])
+train5 = pd.read_csv('input/train_data5.csv')
 
 train = pd.concat([
     train1, train2, train3, train4, train5
@@ -212,11 +248,12 @@ train['oof'] = np.load(OUTPUT_DIR+'oof.npy')
 print(train.shape)
 print(train['label'].value_counts())
 
-train = train[(train['id']!=train['match_id'])&(train['oof']>0.005)]
+train = train[(train['id']!=train['match_id'])&(train['oof']>0.005)].reset_index(drop=True)
+train = reduce_mem_usage(train)
 
 print(train.shape)
 print(train['label'].value_counts())
 
 print(train[['id', 'match_id', 'oof']])
 
-
+train.to_csv('input/downsampled_with_oof_027_train_data.csv', index=False)
