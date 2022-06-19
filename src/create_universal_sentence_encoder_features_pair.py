@@ -102,11 +102,7 @@ class USEVectorizer:
 id_2_text = unpickle('features/id_2_text.pkl')
 
 for path in tqdm([
-    'input/train_data1.csv',
-    'input/train_data2.csv',
-    'input/train_data3.csv',
-    'input/train_data4.csv',
-    'input/train_data5.csv',
+    'input/downsampled_with_oof_027_train_data.csv',
     'input/valid_data1.csv',
     'input/valid_data2.csv',
     'input/valid_data3.csv',
