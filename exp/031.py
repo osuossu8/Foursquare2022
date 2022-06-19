@@ -263,7 +263,7 @@ for i in range(CFG.n_splits):
 from catboost import CatBoostRegressor, CatBoostClassifier, Pool
 
 text_cols = ['text_1', 'text_2']
-cat_features = [f'{v}_1' for v in vec_columns] + [f'{v}_2' for v in vec_columns]
+categorical_cols = [f'{v}_1' for v in vec_columns] + [f'{v}_2' for v in vec_columns]
 
 def fit_cat(X, y, params=None, 
         es_rounds=20, 
