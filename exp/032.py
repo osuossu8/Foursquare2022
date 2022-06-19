@@ -178,7 +178,7 @@ TRAIN_FEATURES = ['kdist',
                 
                 'text_1',
                 'text_2',
-] + [f'{v}_1' for c in cat_columns] + [f'{v}_2' for c in cat_columns]
+] + [f'{c}_1' for c in cat_columns] + [f'{c}_2' for c in cat_columns]
 
 
 import os
