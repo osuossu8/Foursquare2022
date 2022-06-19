@@ -189,7 +189,7 @@ if not os.path.exists(OUTPUT_DIR):
 set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
-"""
+
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
@@ -312,12 +312,10 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
-"""
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
 id_2_text = unpickle('features/id_2_text.pkl')
-USEV = USEVectorizer()
 
 res_df = []
 for test_path in tqdm([
@@ -335,7 +333,7 @@ for test_path in tqdm([
     test['text_2'] = test['match_id'].map(id_2_text)
     test['text'] = test['text_1'] + ' ' + test['text_2']
 
-    path_prefix = path.split('/')[-1].split('.')[0]
+    path_prefix = test_path.split('/')[-1].split('.')[0]
     test[[f'use_vector_{i}' for i in range(512)]] = unpickle(f'features/text_use_vector_{path_prefix}.pkl')
 
     test['pred'] = 0
