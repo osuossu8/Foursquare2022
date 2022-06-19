@@ -189,7 +189,7 @@ if not os.path.exists(OUTPUT_DIR):
 set_seed(CFG.seed)
 device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
-
+"""
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
@@ -312,33 +312,7 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
-
-
-import tensorflow_hub as hub
-
-class USEVectorizer:
-    def __init__(self):
-        self.url = "https://tfhub.dev/google/universal-sentence-encoder/4"
-
-        print('load model ...')
-        self.model = hub.load(self.url)
-
-    def get_batches(self, l, n):
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
-    def get_vectors(self, sentences) -> pd.DataFrame:
-
-        batches = list(self.get_batches(sentences, 128))
-
-        print('get vectors ...')
-        vectors = []
-        for batch in tqdm(batches):
-            vec = self.model(batch).numpy().astype(np.float16)
-            vectors.append(vec)
-        vectors = np.concatenate(vectors, 0)
-        return vectors
-
+"""
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
@@ -361,9 +335,8 @@ for test_path in tqdm([
     test['text_2'] = test['match_id'].map(id_2_text)
     test['text'] = test['text_1'] + ' ' + test['text_2']
 
-    vectors = USEV.get_vectors(test['text'].values)
-    test[[f'use_vector_{i}' for i in range(512)]] = vectors
-    del vectors; gc.collect()
+    path_prefix = path.split('/')[-1].split('.')[0]
+    test[[f'use_vector_{i}' for i in range(512)]] = unpickle(f'features/text_use_vector_{path_prefix}.pkl')
 
     test['pred'] = 0
     for cat_model in tqdm(models):
