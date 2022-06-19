@@ -234,7 +234,7 @@ id_2_text = unpickle('features/id_2_text.pkl')
 train['text_1'] = train['id'].map(id_2_text)
 train['text_2'] = train['match_id'].map(id_2_text)
 
-for v in vec_columns:
+for v in cat_columns:
     train[f'{v}_1'] = train['id'].map(id_2_cat[v])
     train[f'{v}_2'] = train['match_id'].map(id_2_cat[v])
 
