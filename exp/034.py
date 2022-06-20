@@ -104,8 +104,8 @@ class CFG:
     LR = 1e-3
     ETA_MIN = 1e-6
     WEIGHT_DECAY = 1e-6
-    train_bs = 16
-    valid_bs = 32
+    train_bs = 64 #16
+    valid_bs = 128 # 32
     EARLY_STOPPING = True
     DEBUG = False # True
     target = "point_of_interest"
@@ -115,7 +115,7 @@ class CFG:
     model_name = 'xlm-roberta-base'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     max_len = 180
-
+    folds = [0, 1, 2]
                
 
 NUM_NEIGHBOR = 20
@@ -220,6 +220,8 @@ del data;gc.collect()
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
+train = train[train['oof']>0.2].reset_index(drop=True)
+print(train['label'].value_counts())
 
 id_2_text = unpickle('features/id_2_text.pkl')
 
@@ -319,7 +321,7 @@ class FoursquareModel(nn.Module):
         x = torch.cat([self.dropout(x), num_features], 1)
 
         logits = self.head(x)
-        return logits
+        return logits.squeeze(-1)
 
 
 class MetricMeter(object):
