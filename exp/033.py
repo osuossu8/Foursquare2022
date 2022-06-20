@@ -23,6 +23,7 @@ pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 from tqdm.auto import tqdm
+tqdm.pandas()
 
 from contextlib import contextmanager
 from pathlib import Path
@@ -216,7 +217,6 @@ id_2_cat = {k:v for k, v in zip(data['id'].values, data['categories'].fillna('no
 
 del data;gc.collect()
 
-
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
@@ -385,7 +385,7 @@ test = pd.merge(test, train, on='id', how='inner')
 
 del train; gc.collect()
 
-#test = post_process(test)
+test = post_process(test)
 
 print(test[['id', 'matches']].head(10))
 
