@@ -220,7 +220,7 @@ del data;gc.collect()
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
-train = train[train['oof']>0.2].reset_index(drop=True)
+train = train[train['oof']>0.2.5].reset_index(drop=True)
 print(train['label'].value_counts())
 
 id_2_text = unpickle('features/id_2_text.pkl')
@@ -345,8 +345,19 @@ class MetricMeter(object):
         }
 
 
+class RMSELoss(torch.nn.Module):
+    def __init__(self):
+        super(RMSELoss,self).__init__()
+
+    def forward(self,x,y):
+        criterion = nn.MSELoss()
+        loss = torch.sqrt(criterion(x, y))
+        return loss
+
+
 def loss_fn(logits, targets):
-    loss_fct = nn.BCEWithLogitsLoss(reduction='mean')
+    # loss_fct = torch.nn.BCEWithLogitsLoss(reduction="mean")
+    loss_fct = RMSELoss()
     loss = loss_fct(logits, targets)
     return loss
 
