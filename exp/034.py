@@ -401,13 +401,13 @@ def run_one_fold(fold, df, features):
     trn_df = df[df.fold != fold].reset_index(drop=True)
     val_df = df[df.fold == fold].reset_index(drop=True)
 
-    train_dataset = FoursquareDataset(text=trn_df['text'].values, y=trn_df['label'].values, num_features=trn_df[TRAIN_FEATURES].values)
+    train_dataset = FoursquareDataset(text=trn_df['text'].values, y=trn_df['label'].values, num_features=trn_df[features].values)
     train_loader = torch.utils.data.DataLoader(
                    train_dataset, shuffle=True,
                    batch_size=CFG.train_bs,
                    num_workers=0, pin_memory=True)
 
-    val_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df['label'].values, num_features=val_df[TRAIN_FEATURES].values)
+    val_dataset = FoursquareDataset(text=val_df['text'].values, y=val_df['label'].values, num_features=val_df[features].values)
     val_loader = torch.utils.data.DataLoader(
                  val_dataset, shuffle=False,
                  batch_size=CFG.valid_bs,
@@ -454,16 +454,16 @@ def run_one_fold(fold, df, features):
             break
 
 
-def calc_cv_and_inference(df):
+def calc_cv_and_inference(df, features):
     model_paths = [OUTPUT_DIR+f'fold-{i}.bin' for i in range(CFG.n_splits)]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     scaler = StandardScaler()
 
-    df[TRAIN_FEATURES] = pd.DataFrame(scaler.fit_transform(df[TRAIN_FEATURES].fillna(-1)))
+    df[features] = pd.DataFrame(scaler.fit_transform(df[features].fillna(-1)))
     y = df['label'].values
 
-    valid_dataset = FoursquareDataset(text=df['text'].values, y=df['label'].values, num_features=df[TRAIN_FEATURES].values)
+    valid_dataset = FoursquareDataset(text=df['text'].values, y=df['label'].values, num_features=df[features].values)
     valid_dataloader = torch.utils.data.DataLoader(
                  valid_dataset, shuffle=False,
                  batch_size=CFG.valid_bs,
@@ -506,6 +506,14 @@ def calc_cv_and_inference(df):
     return df
 
 
+for fold in range(CFG.n_splits):
+    if fold not in CFG.folds:
+        continue
+    logger.info("Starting fold {} ...".format(fold))
+    run_one_fold(fold, train, TRAIN_FEATURES)
+print('train finished')
+
+
 id_2_text = unpickle('features/id_2_text.pkl')
 
 test1 = pd.read_csv('input/valid_data1.csv')
@@ -522,6 +530,7 @@ del test1, test2, test3, test4, test5; gc.collect()
 
 test['text_1'] = test['id'].map(id_2_text)
 test['text_2'] = test['match_id'].map(id_2_text)
+test['text'] = test['text_1'] + ' [SEP] ' + test['text_2']
 
 test['categories_1'] = test['id'].map(id_2_cat)
 test['categories_2'] = test['match_id'].map(id_2_cat)
@@ -529,7 +538,7 @@ test["category_venn"] = test[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-test = calc_cv_and_inference(test)
+test = calc_cv_and_inference(test, TRAIN_FEATURES)
 
 print(test[['id', 'match_id', 'pred']])
 test = test[test['pred'] > 0.5][['id', 'match_id']]
