@@ -220,7 +220,7 @@ del data;gc.collect()
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
 print(train['label'].value_counts())
-train = train[train['oof']>0.2.5].reset_index(drop=True)
+train = train[train['oof']>0.25].reset_index(drop=True)
 print(train['label'].value_counts())
 
 id_2_text = unpickle('features/id_2_text.pkl')
