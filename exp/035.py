@@ -403,12 +403,13 @@ params = {
     'task_type': "GPU",
 }
 
-
+"""
 oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
                        params=params, n_class=int(train["label"].max() + 1),
                        N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
 print(oof.shape)
+"""
 #np.save(OUTPUT_DIR+'oof.npy', oof)
 
 id_2_text = unpickle('features/id_2_text.pkl')
@@ -467,7 +468,7 @@ test = pd.merge(test, train, on='id', how='inner')
 
 del train; gc.collect()
 
-test = post_process(test)
+#test = post_process(test)
 
 print(test[['id', 'matches']].head(10))
 
