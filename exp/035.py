@@ -226,25 +226,52 @@ data['country'] = data['country'].fillna('nocountry')
 data['address'] = data['address'].fillna('noaddress')
 data['city'] = data['city'].fillna('nocity')
 data['state'] = data['state'].fillna('nostate')
-
 id_2_cat = {k:v for k, v in zip(data['id'].values, data['categories'].values)}
 
+## Data split
+kf = GroupKFold(n_splits=2)
+for i, (trn_idx, val_idx) in enumerate(kf.split(data, 
+                                                data['point_of_interest'], 
+                                                data['point_of_interest'])):
+    data.loc[val_idx, 'set'] = i
+
+valid_data = data[data['set'] == 0]
+train_data = data[data['set'] == 1]
+
 for enum, c in enumerate(['country', 'address', 'city', 'state']):
-    grp = data.groupby(c)['id'].size().reset_index(name=f'{c}_cnt')
+    grp = train_data.groupby(c)['id'].size().reset_index(name=f'{c}_cnt')
     if enum == 0:
-        data2 = pd.merge(data, grp, on=c, how='inner')
+        train_data2 = pd.merge(train_data, grp, on=c, how='inner')
     else:
-        data2 = pd.merge(data2, grp, on=c, how='inner')
+        train_data2 = pd.merge(train_data2, grp, on=c, how='inner')
 
-data = data2.copy()
-del data2;gc.collect()
+train_data = train_data2.copy()
+del train_data2;gc.collect()
 
-id_2_country_cnt = {k:v for k, v in zip(data['id'].values, data['country_cnt'].values)}
-id_2_address_cnt = {k:v for k, v in zip(data['id'].values, data['address_cnt'].values)}
-id_2_city_cnt = {k:v for k, v in zip(data['id'].values, data['city_cnt'].values)}
-id_2_state_cnt = {k:v for k, v in zip(data['id'].values, data['state_cnt'].values)}
+id_2_country_cnt_train = {k:v for k, v in zip(train_data['id'].values, train_data['country_cnt'].values)}
+id_2_address_cnt_train = {k:v for k, v in zip(train_data['id'].values, train_data['address_cnt'].values)}
+id_2_city_cnt_train = {k:v for k, v in zip(train_data['id'].values, train_data['city_cnt'].values)}
+id_2_state_cnt_train = {k:v for k, v in zip(train_data['id'].values, train_data['state_cnt'].values)}
+del train_data;gc.collect()
 
-del data;gc.collect()
+
+for enum, c in enumerate(['country', 'address', 'city', 'state']):
+    grp = valid_data.groupby(c)['id'].size().reset_index(name=f'{c}_cnt')
+    if enum == 0:
+        valid_data2 = pd.merge(valid_data, grp, on=c, how='inner')
+    else:
+        valid_data2 = pd.merge(valid_data2, grp, on=c, how='inner')
+
+valid_data = valid_data2.copy()
+del valid_data2;gc.collect()
+
+
+id_2_country_cnt_valid = {k:v for k, v in zip(valid_data['id'].values, valid_data['country_cnt'].values)}
+id_2_address_cnt_valid = {k:v for k, v in zip(valid_data['id'].values, valid_data['address_cnt'].values)}
+id_2_city_cnt_valid = {k:v for k, v in zip(valid_data['id'].values, valid_data['city_cnt'].values)}
+id_2_state_cnt_valid = {k:v for k, v in zip(valid_data['id'].values, valid_data['state_cnt'].values)}
+del valid_data;gc.collect()
+
 
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_027_train_data.csv')
@@ -261,17 +288,17 @@ train["category_venn"] = train[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-train['country_cnt_1'] = train['id'].map(id_2_country_cnt)
-train['country_cnt_2'] = train['match_id'].map(id_2_country_cnt)
+train['country_cnt_1'] = train['id'].map(id_2_country_cnt_train)
+train['country_cnt_2'] = train['match_id'].map(id_2_country_cnt_train)
 
-train['address_cnt_1'] = train['id'].map(id_2_address_cnt)
-train['address_cnt_2'] = train['match_id'].map(id_2_address_cnt)
+train['address_cnt_1'] = train['id'].map(id_2_address_cnt_train)
+train['address_cnt_2'] = train['match_id'].map(id_2_address_cnt_train)
 
-train['city_cnt_1'] = train['id'].map(id_2_city_cnt)
-train['city_cnt_2'] = train['match_id'].map(id_2_city_cnt)
+train['city_cnt_1'] = train['id'].map(id_2_city_cnt_train)
+train['city_cnt_2'] = train['match_id'].map(id_2_city_cnt_train)
 
-train['state_cnt_1'] = train['id'].map(id_2_state_cnt)
-train['state_cnt_2'] = train['match_id'].map(id_2_state_cnt)
+train['state_cnt_1'] = train['id'].map(id_2_state_cnt_train)
+train['state_cnt_2'] = train['match_id'].map(id_2_state_cnt_train)
 
 print(train.shape)
 print(train['label'].value_counts())
@@ -400,28 +427,6 @@ test = pd.concat([
 
 del test1, test2, test3, test4, test5; gc.collect()
 
-test['categories'] = test['categories'].fillna('nocategories')
-test['country'] = test['country'].fillna('nocountry')
-test['address'] = test['address'].fillna('noaddress')
-test['city'] = test['city'].fillna('nocity')
-test['state'] = test['state'].fillna('nostate')
-
-for enum, c in enumerate(['country', 'address', 'city', 'state']):
-    grp = test.groupby(c)['id'].size().reset_index(name=f'{c}_cnt')
-    if enum == 0:
-        test2 = pd.merge(test, grp, on=c, how='inner')
-    else:
-        test2 = pd.merge(test2, grp, on=c, how='inner')
-
-test = test2.copy()
-del test2;gc.collect()
-
-id_2_cat = {k:v for k, v in zip(test['id'].values, test['categories'].values)}
-id_2_country_cnt = {k:v for k, v in zip(test['id'].values, test['country_cnt'].values)}
-id_2_address_cnt = {k:v for k, v in zip(test['id'].values, test['address_cnt'].values)}
-id_2_city_cnt = {k:v for k, v in zip(test['id'].values, test['city_cnt'].values)}
-id_2_state_cnt = {k:v for k, v in zip(test['id'].values, test['state_cnt'].values)}
-
 test['text_1'] = test['id'].map(id_2_text)
 test['text_2'] = test['match_id'].map(id_2_text)
 
@@ -431,17 +436,17 @@ test["category_venn"] = test[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-test['country_cnt_1'] = test['id'].map(id_2_country_cnt)
-test['country_cnt_2'] = test['match_id'].map(id_2_country_cnt)
+test['country_cnt_1'] = test['id'].map(id_2_country_cnt_valid)
+test['country_cnt_2'] = test['match_id'].map(id_2_country_cnt_valid)
 
-test['address_cnt_1'] = test['id'].map(id_2_address_cnt)
-test['address_cnt_2'] = test['match_id'].map(id_2_address_cnt)
+test['address_cnt_1'] = test['id'].map(id_2_address_cnt_valid)
+test['address_cnt_2'] = test['match_id'].map(id_2_address_cnt_valid)
 
-test['city_cnt_1'] = test['id'].map(id_2_city_cnt)
-test['city_cnt_2'] = test['match_id'].map(id_2_city_cnt)
+test['city_cnt_1'] = test['id'].map(id_2_city_cnt_valid)
+test['city_cnt_2'] = test['match_id'].map(id_2_city_cnt_valid)
 
-test['state_cnt_1'] = test['id'].map(id_2_state_cnt)
-test['state_cnt_2'] = test['match_id'].map(id_2_state_cnt)
+test['state_cnt_1'] = test['id'].map(id_2_state_cnt_valid)
+test['state_cnt_2'] = test['match_id'].map(id_2_state_cnt_valid)
 
 print(test.shape)
 
