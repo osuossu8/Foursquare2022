@@ -192,8 +192,8 @@ TRAIN_FEATURES = ['kdist',
                 'country_leven',
                 'country_nleven',
                 
-                'text_1',
-                'text_2',
+                #'text_1',
+                #'text_2',
 
                 'category_venn',
 ]
@@ -216,7 +216,7 @@ data = pd.read_csv("input/train.csv")
 id_2_cat = {k:v for k, v in zip(data['id'].values, data['categories'].fillna('nocategories').values)}
 
 del data;gc.collect()
-
+"""
 print('load data')
 train1 = pd.read_csv('input/train_data_candidate_25_1.csv')
 print(train1['label'].value_counts())
@@ -242,8 +242,8 @@ del train1, train2, train3, train4, train5; gc.collect()
 
 id_2_text = unpickle('features/id_2_text.pkl')
 
-train['text_1'] = train['id'].map(id_2_text)
-train['text_2'] = train['match_id'].map(id_2_text)
+#train['text_1'] = train['id'].map(id_2_text)
+#train['text_2'] = train['match_id'].map(id_2_text)
 
 train['categories_1'] = train['id'].map(id_2_cat)
 train['categories_2'] = train['match_id'].map(id_2_cat)
@@ -257,7 +257,7 @@ print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
 
-print(train[['text_1', 'text_2', 'category_venn']].head())
+print(train[['category_venn']].head())
 
 
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
@@ -297,14 +297,14 @@ def fit_cat(X, y, params=None,
             X_train, 
             y_train, 
             #cat_features=categorical_cols,
-            text_features=text_cols,
+            #text_features=text_cols,
             #feature_names=list(X_tr)
         )
         valid_pool = Pool(
             X_valid, 
             y_valid, 
             #cat_features=categorical_cols,
-            text_features=text_cols,
+            #text_features=text_cols,
             #feature_names=list(X_tr)
         )
 
@@ -361,7 +361,7 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
-
+"""
 id_2_text = unpickle('features/id_2_text.pkl')
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
@@ -378,8 +378,8 @@ test = pd.concat([
 
 del test1, test2, test3, test4, test5; gc.collect()
 
-test['text_1'] = test['id'].map(id_2_text)
-test['text_2'] = test['match_id'].map(id_2_text)
+#test['text_1'] = test['id'].map(id_2_text)
+#test['text_2'] = test['match_id'].map(id_2_text)
 
 test['categories_1'] = test['id'].map(id_2_cat)
 test['categories_2'] = test['match_id'].map(id_2_cat)
