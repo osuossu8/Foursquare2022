@@ -216,7 +216,7 @@ data = pd.read_csv("input/train.csv")
 id_2_cat = {k:v for k, v in zip(data['id'].values, data['categories'].fillna('nocategories').values)}
 
 del data;gc.collect()
-
+"""
 print('load data')
 train1 = pd.read_csv('input/preprocessed_pykakashi/train_data1.csv')
 print(train1['label'].value_counts())
@@ -361,7 +361,7 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 #np.save(OUTPUT_DIR+'oof.npy', oof)
-
+"""
 id_2_text = unpickle('features/id_2_text.pkl')
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
