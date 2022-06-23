@@ -385,7 +385,7 @@ test = pd.merge(test, train, on='id', how='inner')
 
 del train; gc.collect()
 
-test = post_process(test)
+#test = post_process(test)
 
 print(test[['id', 'matches']].head(10))
 
