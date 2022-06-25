@@ -48,6 +48,7 @@ from transformers import AutoConfig, AutoModel, AutoModelForMaskedLM, AutoTokeni
 from src.machine_learning_util import set_seed, set_device, init_logger, AverageMeter, to_pickle, unpickle
 
 import reverse_geocode
+import numba
 
 
 # https://www.kaggle.com/code/columbia2131/foursquare-iou-metrics
