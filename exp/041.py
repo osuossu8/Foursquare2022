@@ -110,6 +110,8 @@ def get_cities(coords):
     return [v['city'] for v in data]
 
 
+EARTH_RADIUS = 6371
+
 # Numba optimized haversine distance
 @numba.jit(nopython=True)
 def haversine_np(args):
