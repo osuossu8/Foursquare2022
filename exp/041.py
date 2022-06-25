@@ -134,6 +134,7 @@ def add_haversine_distance(df):
             haversine_np, 1,
             df[['longitude_1', 'latitude_1', 'longitude_2', 'latitude_2']].values.astype(np.float32)
         ).astype(np.float32)
+    return df
 
 
 class CFG:
