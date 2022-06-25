@@ -290,9 +290,6 @@ print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
 
-print(train[['country_code_1', 'country_code_2', 'city_rg_1', 'city_rg_2', 'category_venn']].head())
-
-
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
 kf = GroupKFold(n_splits=CFG.n_splits)
 for i, (trn_idx, val_idx) in tqdm(enumerate(kf.split(X=train, y=train["label"], groups=train["id"]))):
