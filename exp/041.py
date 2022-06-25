@@ -109,6 +109,22 @@ def get_cities(coords):
     return [v['city'] for v in data]
 
 
+# Numba optimized haversine distance
+@numba.jit(nopython=True)
+def haversine_np(args):
+    lon1, lat1, lon2, lat2 = args
+    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = np.sin(dlat/2.0)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2.0)**2
+
+    c = 2 * np.arcsin(np.sqrt(a))
+    km = EARTH_RADIUS * c
+    return km
+
+
 # Adds haversine distance between two points
 def add_haversine_distance(df):
     df['haversine_distance'] = np.apply_along_axis(
