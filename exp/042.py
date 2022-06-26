@@ -259,7 +259,7 @@ TRAIN_FEATURES = ['kdist',
 
                 'category_venn',
 
-                'haversine_distance', 
+                # 'haversine_distance', 
 
                 'name_distance_use',
                 'name_distance_mpnet',
