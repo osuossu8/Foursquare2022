@@ -99,6 +99,7 @@ def categorical_similarity(A, B):
 
 EARTH_RADIUS = 6371
 
+import numba
 # Numba optimized haversine distance
 @numba.jit(nopython=True)
 def haversine_np(args):
@@ -226,12 +227,12 @@ TRAIN_FEATURES = ['kdist',
                 'haversine_distance',
 
                 'name_sim_use',
+                'categories_sim_use',
 
 ]
 
-import numba
 # Optimized cosine similarity function
-@numba.jit(nopython=True)
+#@numba.jit(nopython=True)
 def cosine_similarity(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
@@ -289,9 +290,12 @@ train["category_venn"] = train[["categories_1", "categories_2"]] \
 use_sim = []
 for nv1, nv2 in tqdm(zip(train['name_1'].map(name_2_name_use_vector), train['name_2'].map(name_2_name_use_vector))):
     use_sim.append(cosine_similarity(nv1, nv2))
-
 train['name_sim_use'] = use_sim
 
+categories_sim = []
+for nv1, nv2 in tqdm(zip(train['categories_1'].map(categories_2_categories_use_vector), train['categories_2'].map(categories_2_categories_use_vector))):
+    use_sim.append(cosine_similarity(nv1, nv2))
+train['categories_sim_use'] = categories_sim
 
 print(train.shape)
 print(train['label'].value_counts())
@@ -299,7 +303,7 @@ print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
 
-print(train[['category_venn']].head())
+print(train[['name_sim_use', 'categories_sim_use', 'category_venn']].head())
 
 
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
@@ -444,8 +448,12 @@ for test_path in tqdm([
     use_sim = []
     for nv1, nv2 in tqdm(zip(test['name_1'].map(name_2_name_use_vector), test['name_2'].map(name_2_name_use_vector))):
         use_sim.append(cosine_similarity(nv1, nv2))
-
     test['name_sim_use'] = use_sim
+
+    categories_sim = []
+    for nv1, nv2 in tqdm(zip(test['categories_1'].map(categories_2_categories_use_vector), test['categories_2'].map(categories_2_categories_use_vector))):
+        use_sim.append(cosine_similarity(nv1, nv2))
+    test['categories_sim_use'] = categories_sim
 
     test['pred'] = 0
     for cat_model in tqdm(models):
