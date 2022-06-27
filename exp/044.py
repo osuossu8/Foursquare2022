@@ -196,8 +196,14 @@ TRAIN_FEATURES = ['kdist',
                 'text_2',
 
                 'category_venn',
-] + [f'name_1_vec_{i}' for i in range(512)] + [f'name_2_vec_{i}' for i in range(512)]
 
+] + [f'name_vec_{i}' for i in range(512)]
+
+import numba
+# Optimized cosine similarity function
+@numba.jit(nopython=True)
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 import os
 
@@ -227,7 +233,7 @@ train = pd.read_csv('input/downsampled_with_oof_037_train_data.csv')
 print(train['label'].value_counts())
 
 id_2_text = unpickle('features/id_2_text.pkl')
-
+"""
 train['text_1'] = train['id'].map(id_2_text)
 train['text_2'] = train['match_id'].map(id_2_text)
 
@@ -240,8 +246,8 @@ train["category_venn"] = train[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-train[[f'name_1_vec_{i}' for i in range(512)]] = np.stack(train['name_1'].map(name_2_name_use_vector))
-train[[f'name_2_vec_{i}' for i in range(512)]] = np.stack(train['name_2'].map(name_2_name_use_vector))
+train[[f'name_vec_{i}' for i in range(512)]] = np.stack(train['name_1'].map(name_2_name_use_vector)) + np.stack(train['name_2'].map(name_2_name_use_vector))
+
 
 print(train.shape)
 print(train['label'].value_counts())
@@ -353,41 +359,53 @@ oof, models = fit_cat(train[TRAIN_FEATURES], train["label"].astype(int),
 
 print(oof.shape)
 np.save(OUTPUT_DIR+'oof.npy', oof)
-
+"""
 id_2_text = unpickle('features/id_2_text.pkl')
 
 models = [unpickle(OUTPUT_DIR+f'cat_fold{i}.pkl') for i in range(CFG.n_splits)]
 
-test1 = pd.read_csv('input/valid_data_candidate_25_1.csv')
-test2 = pd.read_csv('input/valid_data_candidate_25_2.csv')
-test3 = pd.read_csv('input/valid_data_candidate_25_3.csv')
-test4 = pd.read_csv('input/valid_data_candidate_25_4.csv')
-test5 = pd.read_csv('input/valid_data_candidate_25_5.csv')
+res_df = []
+for test_path in tqdm([
+    'input/valid_data_candidate_25_1.csv',
+    'input/valid_data_candidate_25_2.csv',
+    'input/valid_data_candidate_25_3.csv',
+    'input/valid_data_candidate_25_4.csv',
+    'input/valid_data_candidate_25_5.csv'
+    ]):
 
-test = pd.concat([
-    test1, test2, test3, test4, test5
-], 0).reset_index(drop=True)
+    test = pd.read_csv(test_path)
 
-del test1, test2, test3, test4, test5; gc.collect()
+    test['text_1'] = test['id'].map(id_2_text)
+    test['text_2'] = test['match_id'].map(id_2_text)
 
-test['text_1'] = test['id'].map(id_2_text)
-test['text_2'] = test['match_id'].map(id_2_text)
+    test['name_1'] = test['id'].map(id_2_name)
+    test['name_2'] = test['match_id'].map(id_2_name)
 
-test['name_1'] = test['id'].map(id_2_name)
-test['name_2'] = test['match_id'].map(id_2_name)
-
-test['categories_1'] = test['id'].map(id_2_cat)
-test['categories_2'] = test['match_id'].map(id_2_cat)
-test["category_venn"] = test[["categories_1", "categories_2"]] \
+    test['categories_1'] = test['id'].map(id_2_cat)
+    test['categories_2'] = test['match_id'].map(id_2_cat)
+    test["category_venn"] = test[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-test[[f'name_1_vec_{i}' for i in range(512)]] = np.stack(test['name_1'].map(name_2_name_use_vector))
-test[[f'name_2_vec_{i}' for i in range(512)]] = np.stack(test['name_2'].map(name_2_name_use_vector))
+    test[[f'name_vec_{i}' for i in range(512)]] = np.stack(test['name_1'].map(name_2_name_use_vector)) + np.stack(test['name_2'].map(name_2_name_use_vector))
 
-test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
-print(test[['id', 'match_id', 'pred']])
-test = test[test['pred'] > 0.5][['id', 'match_id']]
+
+    test['pred'] = 0
+    for cat_model in tqdm(models):
+
+        test['pred'] += cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1]/len(models)
+
+    print(test[['id', 'match_id', 'pred']])
+    res_df.append(test[test['pred'] > 0.5][['id', 'match_id']])
+
+    del test; gc.collect()
+
+test = pd.concat(res_df, 0).reset_index(drop=True)
+
+del res_df; gc.collect()
+del id_2_text; gc.collect()
+
+
 print(test['id'].nunique())
 
 test = test.groupby('id')['match_id'].apply(list).reset_index()
