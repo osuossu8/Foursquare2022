@@ -294,7 +294,7 @@ train['name_sim_use'] = use_sim
 
 categories_sim = []
 for nv1, nv2 in tqdm(zip(train['categories_1'].map(categories_2_categories_use_vector), train['categories_2'].map(categories_2_categories_use_vector))):
-    use_sim.append(cosine_similarity(nv1, nv2))
+    categories_sim.append(cosine_similarity(nv1, nv2))
 train['categories_sim_use'] = categories_sim
 
 print(train.shape)
@@ -452,7 +452,7 @@ for test_path in tqdm([
 
     categories_sim = []
     for nv1, nv2 in tqdm(zip(test['categories_1'].map(categories_2_categories_use_vector), test['categories_2'].map(categories_2_categories_use_vector))):
-        use_sim.append(cosine_similarity(nv1, nv2))
+        categories_sim.append(cosine_similarity(nv1, nv2))
     test['categories_sim_use'] = categories_sim
 
     test['pred'] = 0
