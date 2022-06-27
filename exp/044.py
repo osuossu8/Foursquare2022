@@ -196,7 +196,7 @@ TRAIN_FEATURES = ['kdist',
                 'text_2',
 
                 'category_venn',
-] + [f'name_1_vec_{i}' for i in range(768)] + [f'name_2_vec_{i}' for i in range(768)]
+] + [f'name_1_vec_{i}' for i in range(512)] + [f'name_2_vec_{i}' for i in range(512)]
 
 
 import os
@@ -240,8 +240,8 @@ train["category_venn"] = train[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-train[[f'name_1_vec_{i}' for i in range(768)]] = np.stack(train['name_1'].map(name_2_name_use_vector))
-train[[f'name_2_vec_{i}' for i in range(768)]] = np.stack(train['name_2'].map(name_2_name_use_vector))
+train[[f'name_1_vec_{i}' for i in range(512)]] = np.stack(train['name_1'].map(name_2_name_use_vector))
+train[[f'name_2_vec_{i}' for i in range(512)]] = np.stack(train['name_2'].map(name_2_name_use_vector))
 
 print(train.shape)
 print(train['label'].value_counts())
@@ -382,8 +382,8 @@ test["category_venn"] = test[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
 
-test[[f'name_1_vec_{i}' for i in range(768)]] = np.stack(test['name_1'].map(name_2_name_use_vector))
-test[[f'name_2_vec_{i}' for i in range(768)]] = np.stack(test['name_2'].map(name_2_name_use_vector))
+test[[f'name_1_vec_{i}' for i in range(512)]] = np.stack(test['name_1'].map(name_2_name_use_vector))
+test[[f'name_2_vec_{i}' for i in range(512)]] = np.stack(test['name_2'].map(name_2_name_use_vector))
 
 test['pred'] = np.mean([cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1] for cat_model in models], 0)
 print(test[['id', 'match_id', 'pred']])
