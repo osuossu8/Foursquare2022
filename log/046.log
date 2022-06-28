@@ -1,0 +1,9 @@
+== fold 0 ==
+== fold 1 ==
+== fold 2 ==
+CV-accuracy: 0.9476623829102535
+== fold 0 ==
+== fold 1 ==
+== fold 2 ==
+CV-accuracy: 0.9484147775989525
+IoU: 0.852043

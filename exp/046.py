@@ -233,8 +233,8 @@ TRAIN_FEATURES = ['kdist',
                 'name_sim_use',
                 'categories_sim_use',
 
-                'latdiff',
-                'londiff',
+                #'latdiff',
+                #'londiff',
                 'manhattan',
                 'euclidean',
 ]
