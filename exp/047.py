@@ -237,7 +237,9 @@ TRAIN_FEATURES = ['kdist',
                 #'londiff',
                 #'manhattan',
                 #'euclidean',
-] + [f'text_w2v_1_{i}' for i in range(50)] + [f'text_w2v_2_{i}' for i in range(50)]
+
+                'text_sim_w2v',
+]
 
 # Optimized cosine similarity function
 #@numba.jit(nopython=True)
@@ -288,8 +290,10 @@ train['longitude_2'] = train['match_id'].map(id_2_lon)
 train = add_haversine_distance(train)
 
 id_2_w2v_vec_train = unpickle(f'features/id_2_text_w2v_vector_50d_train_ids.pkl')
-train[[f'text_w2v_1_{i}' for i in range(50)]] = np.stack(train['id'].map(id_2_w2v_vec_train))
-train[[f'text_w2v_2_{i}' for i in range(50)]] = np.stack(train['match_id'].map(id_2_w2v_vec_train))
+w2v_sim = []
+for nv1, nv2 in tqdm(zip(train['id'].map(id_2_w2v_vec_train), train['match_id'].map(id_2_w2v_vec_train))):
+    w2v_sim.append(cosine_similarity(nv1, nv2))
+train['text_sim_w2v'] = w2v_sim
 del id_2_w2v_vec_train; gc.collect()
 
 id_2_text = unpickle('features/id_2_text.pkl')
@@ -322,7 +326,7 @@ print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
 
-print(train[['name_sim_use', 'categories_sim_use', 'category_venn']].head())
+print(train[['text_sim_w2v', 'name_sim_use', 'categories_sim_use', 'category_venn']].head())
 
 
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
@@ -457,8 +461,10 @@ for test_path in tqdm([
 
     test = add_haversine_distance(test)
 
-    test[[f'text_w2v_1_{i}' for i in range(50)]] = np.stack(test['id'].map(id_2_w2v_vec_valid))
-    test[[f'text_w2v_2_{i}' for i in range(50)]] = np.stack(test['match_id'].map(id_2_w2v_vec_valid))
+    w2v_sim = []
+    for nv1, nv2 in tqdm(zip(test['id'].map(id_2_w2v_vec_valid), test['match_id'].map(id_2_w2v_vec_valid))):
+        w2v_sim.append(cosine_similarity(nv1, nv2))
+    test['text_sim_w2v'] = w2v_sim
 
     test['text_1'] = test['id'].map(id_2_text)
     test['text_2'] = test['match_id'].map(id_2_text)
