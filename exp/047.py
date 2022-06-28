@@ -288,8 +288,8 @@ train['longitude_2'] = train['match_id'].map(id_2_lon)
 train = add_haversine_distance(train)
 
 id_2_w2v_vec_train = unpickle(f'features/id_2_text_w2v_vector_50d_train_ids.pkl')
-train[[f'text_w2v_1_{i}' for i in range(50)]] = train['id'].map(id_2_w2v_vec_train)
-train[[f'text_w2v_2_{i}' for i in range(50)]] = train['match_id'].map(id_2_w2v_vec_train)
+train[[f'text_w2v_1_{i}' for i in range(50)]] = np.stack(train['id'].map(id_2_w2v_vec_train))
+train[[f'text_w2v_2_{i}' for i in range(50)]] = np.stack(train['match_id'].map(id_2_w2v_vec_train))
 del id_2_w2v_vec_train; gc.collect()
 
 id_2_text = unpickle('features/id_2_text.pkl')
@@ -457,8 +457,8 @@ for test_path in tqdm([
 
     test = add_haversine_distance(test)
 
-    test[[f'text_w2v_1_{i}' for i in range(50)]] = test['id'].map(id_2_w2v_vec_valid)
-    test[[f'text_w2v_2_{i}' for i in range(50)]] = test['match_id'].map(id_2_w2v_vec_valid)
+    test[[f'text_w2v_1_{i}' for i in range(50)]] = np.stack(test['id'].map(id_2_w2v_vec_valid))
+    test[[f'text_w2v_2_{i}' for i in range(50)]] = np.stack(test['match_id'].map(id_2_w2v_vec_valid))
 
     test['text_1'] = test['id'].map(id_2_text)
     test['text_2'] = test['match_id'].map(id_2_text)
