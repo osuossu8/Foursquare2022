@@ -312,13 +312,6 @@ train['latitude_2'] = train['match_id'].map(id_2_lat)
 train['longitude_1'] = train['id'].map(id_2_lon)
 train['longitude_2'] = train['match_id'].map(id_2_lon)
 train = add_haversine_distance(train)
-del train[['latitude_1', 'latitude_2', 'longitude_1', 'longitude_2']]; gc.collect()
-
-train['address_1'] = train['id'].map(id_2_address) 
-train['address_2'] = train['match_id'].map(id_2_address)
-train = add_longest_substr(train)
-del train[['address_1', 'address_2']]; gc.collect()
-
 
 id_2_w2v_vec_train = unpickle(f'features/id_2_text_w2v_vector_50d_train_ids.pkl')
 w2v_sim = []
@@ -340,6 +333,10 @@ train['categories_2'] = train['match_id'].map(id_2_cat)
 train["category_venn"] = train[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
+
+train['address_1'] = train['id'].map(id_2_address)
+train['address_2'] = train['match_id'].map(id_2_address)
+train = add_longest_substr(train)
 
 use_sim = []
 for nv1, nv2 in tqdm(zip(train['name_1'].map(name_2_name_use_vector), train['name_2'].map(name_2_name_use_vector))):
@@ -478,12 +475,6 @@ for test_path in tqdm([
     test['longitude_1'] = test['id'].map(id_2_lon)
     test['longitude_2'] = test['match_id'].map(id_2_lon)
     test = add_haversine_distance(test)
-    del test[['latitude_1', 'latitude_2', 'longitude_1', 'longitude_2']]; gc.collect()
-
-    test['address_1'] = test['id'].map(id_2_address)
-    test['address_2'] = test['match_id'].map(id_2_address)
-    test = add_longest_substr(test)
-    del test[['address_1', 'address_2']]; gc.collect()
 
     w2v_sim = []
     for nv1, nv2 in tqdm(zip(test['id'].map(id_2_w2v_vec_valid), test['match_id'].map(id_2_w2v_vec_valid))):
@@ -501,6 +492,10 @@ for test_path in tqdm([
     test["category_venn"] = test[["categories_1", "categories_2"]] \
         .progress_apply(lambda row: categorical_similarity(row.categories_1, row.categories_2),
                         axis=1)
+
+    test['address_1'] = test['id'].map(id_2_address)
+    test['address_2'] = test['match_id'].map(id_2_address)
+    test = add_longest_substr(test)
 
     use_sim = []
     for nv1, nv2 in tqdm(zip(test['name_1'].map(name_2_name_use_vector), test['name_2'].map(name_2_name_use_vector))):
