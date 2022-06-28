@@ -157,10 +157,19 @@ tv_ids_d = {}
 tv_ids_d['train_ids'] = train_ids
 tv_ids_d['valid_ids'] = valid_ids
 
+
 pipeline = make_pipeline(
-                        BM25Transformer(use_idf=True, k1=2.0, b=0.75),
-                        TruncatedSVD(n_components=50, random_state=42)
-                    )
+                TfidfVectorizer(max_features=100000),
+                make_union(
+                    TruncatedSVD(n_components=32, random_state=42),
+                    make_pipeline(
+                        BM25Transformer(use_idf=False, k1=2.0, b=0.75),
+                        TruncatedSVD(n_components=32, random_state=42)
+                    ),
+                    n_jobs=1,
+                ),
+             )
+
 
 for idx in ['train_ids', 'valid_ids']:
     data2 = data.set_index('id')
@@ -172,5 +181,5 @@ for idx in ['train_ids', 'valid_ids']:
 
     id_2_text_bm25_svd_vector = {k:v for k, v in zip(data2['id'], bm25_svd_vec)}
 
-    to_pickle(f'features/id_2_text_bm25_svd_vector_50d_{idx}.pkl', id_2_text_bm25_svd_vector)
+    to_pickle(f'features/id_2_text_tfidf_bm25_svd_vector_64d_{idx}.pkl', id_2_text_bm25_svd_vector)
 
