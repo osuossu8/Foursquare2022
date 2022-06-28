@@ -108,7 +108,7 @@ class W2VVectorizer:
         return vectors
 
 
-data = pd.read_csv('input/train.csv', nrows=10000)
+data = pd.read_csv('input/train.csv')
 data['text'] = ''
 for v in vec_columns:
     data['text'] += data[v].fillna('nan') + ' '
