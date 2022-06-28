@@ -113,10 +113,18 @@ data['text'] = ''
 for v in vec_columns:
     data['text'] += data[v].fillna('nan') + ' '
 
-w2v_vec = W2VVectorizer(data['text'], vec_size=50).get_vectors()
-print(w2v_vec.shape)
+tv_ids_d = np.load('tv_ids_d.npy')
 
-id_2_text_w2v_vector = {k:v for k, v in zip(data['id'], w2v_vec)}
+for idx in ['train_ids', 'valid_ids']:
+    data = data.set_index('id')
+    data = data.loc[tv_ids_d[idx]]
+    data = data.reset_index()
 
-to_pickle(f'features/id_2_text_w2v_vector_50d.pkl', id_2_text_w2v_vector)
+
+    w2v_vec = W2VVectorizer(data['text'], vec_size=50).get_vectors()
+    print(w2v_vec.shape)
+
+    id_2_text_w2v_vector = {k:v for k, v in zip(data['id'], w2v_vec)}
+
+    to_pickle(f'features/id_2_text_w2v_vector_50d_{idx}.pkl', id_2_text_w2v_vector)
 
