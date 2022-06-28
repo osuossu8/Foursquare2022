@@ -97,22 +97,6 @@ def categorical_similarity(A, B):
     return max(similarity_1, similarity_2)
 
 
-def name_similarity(A, B):
-    if not A or not B:
-        return -1
-
-    A = set(str(A).split(" "))
-    B = set(str(B).split(" "))
-
-    # Find intersection of two sets
-    nominator = A.intersection(B)
-
-    similarity_1 = len(nominator) / len(A)
-    similarity_2 = len(nominator) / len(B)
-
-    return max(similarity_1, similarity_2)
-
-
 EARTH_RADIUS = 6371
 
 import numba
@@ -143,6 +127,40 @@ def add_haversine_distance(df):
 
 def manhattan(lat1, long1, lat2, long2):
     return np.abs(lat2 - lat1) + np.abs(long2 - long1)
+
+
+longest_substring_columns = [
+    'name',
+    'address',
+    'categories',
+]
+
+# source: https://stackoverflow.com/questions/18715688/find-common-substring-between-two-strings
+@numba.jit(nopython=True, nogil=True, cache=True)
+def longestSubstringFinder(string1: str, string2: str):
+    answer = 0
+    len1, len2 = len(string1), len(string2)
+
+    for i in range(len1):
+        for j in range(len2):
+            lcs_temp = 0
+            match = 0
+            while ((i+lcs_temp < len1) and (j+lcs_temp<len2) and string1[i+lcs_temp] == string2[j+lcs_temp]):
+                match += 1
+                lcs_temp += 1
+            if match > answer:
+                answer = match
+    return np.uint8(answer)
+
+
+# Longest substring feature
+def add_longest_substr(df):
+    for col in longest_substring_columns:
+        df[f'{col}_longest_substr'] = df[[f'{col}_1', f'{col}_2']].apply(lambda args: longestSubstringFinder(*args), axis=1, raw=True).astype(np.uint8)
+        df[f'{col}_longest_substr_ratio'] = (
+                (df[f'{col}_longest_substr'] * 2) / (df[f'{col}_1'].apply(len) + df[f'{col}_2'].apply(len))
+            ).astype(np.float32)
+    return df
 
 
 class CFG:
@@ -249,13 +267,10 @@ TRAIN_FEATURES = ['kdist',
                 'name_sim_use',
                 'categories_sim_use',
 
-                #'latdiff',
-                #'londiff',
-                #'manhattan',
-                #'euclidean',
-
                 'text_sim_w2v',
-                'name_venn',
+                'name_longest_substr_ratio',
+                'address_longest_substr_ratio',
+                'categories_longest_substr_ratio',
 ]
 
 # Optimized cosine similarity function
@@ -281,6 +296,7 @@ id_2_cat = {k:v for k, v in zip(data['id'].values, data['categories'].fillna('no
 id_2_name = {k:v for k, v in zip(data['id'].values, data['name'].fillna('noname').values)}
 id_2_lat = {k:v for k, v in zip(data['id'].values, data['latitude'].values)}
 id_2_lon = {k:v for k, v in zip(data['id'].values, data['longitude'].values)}
+id_2_address = {k:v for k, v in zip(data['id'].values, data['address'].fillna('noaddress').values)}
 
 del data;gc.collect()
 
@@ -289,22 +305,20 @@ name_2_name_use_vector = unpickle('features/name_2_name_use_vector.pkl')
 
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_037_train_data.csv')
-#train = train[train['oof']>0.01].reset_index(drop=True)
 print(train['label'].value_counts())
 
 train['latitude_1'] = train['id'].map(id_2_lat)
 train['latitude_2'] = train['match_id'].map(id_2_lat)
-
 train['longitude_1'] = train['id'].map(id_2_lon)
 train['longitude_2'] = train['match_id'].map(id_2_lon)
-
-#train['latdiff'] = train['latitude_1'] - train['latitude_2']
-#train['londiff'] = train['longitude_1'] - train['longitude_2']
-
-#train['euclidean'] = (train['latdiff'] ** 2 + train['londiff'] ** 2) ** 0.5
-#train['manhattan'] = manhattan(train['latitude_1'], train['longitude_1'], train['latitude_2'], train['longitude_2'])
-
 train = add_haversine_distance(train)
+del train[['latitude_1', 'latitude_2', 'longitude_1', 'longitude_2']]; gc.collect()
+
+train['address_1'] = train['id'].map(id_2_address) 
+train['address_2'] = train['match_id'].map(id_2_address)
+train = add_longest_substr(train)
+del train[['address_1', 'address_2']]; gc.collect()
+
 
 id_2_w2v_vec_train = unpickle(f'features/id_2_text_w2v_vector_50d_train_ids.pkl')
 w2v_sim = []
@@ -320,9 +334,6 @@ train['text_2'] = train['match_id'].map(id_2_text)
 
 train['name_1'] = train['id'].map(id_2_name)
 train['name_2'] = train['match_id'].map(id_2_name)
-train["name_venn"] = train[["name_1", "name_2"]] \
-        .progress_apply(lambda row: name_similarity(row.name_1, row.name_2),
-                        axis=1)
 
 train['categories_1'] = train['id'].map(id_2_cat)
 train['categories_2'] = train['match_id'].map(id_2_cat)
@@ -345,8 +356,7 @@ print(train['label'].value_counts())
 print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
-
-print(train[['name_venn', 'text_sim_w2v', 'name_sim_use', 'categories_sim_use', 'category_venn']].head())
+print(train[['name_longest_substr_ratio', 'address_longest_substr_ratio', 'categories_longest_substr_ratio', 'text_sim_w2v', 'name_sim_use', 'categories_sim_use', 'category_venn']].head())
 
 
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
@@ -465,17 +475,15 @@ for test_path in tqdm([
 
     test['latitude_1'] = test['id'].map(id_2_lat)
     test['latitude_2'] = test['match_id'].map(id_2_lat)
-
     test['longitude_1'] = test['id'].map(id_2_lon)
     test['longitude_2'] = test['match_id'].map(id_2_lon)
-
-    #test['latdiff'] = test['latitude_1'] - test['latitude_2']
-    #test['londiff'] = test['longitude_1'] - test['longitude_2']
-
-    #test['euclidean'] = (test['latdiff'] ** 2 + test['londiff'] ** 2) ** 0.5
-    #test['manhattan'] = manhattan(test['latitude_1'], test['longitude_1'], test['latitude_2'], test['longitude_2'])
-
     test = add_haversine_distance(test)
+    del test[['latitude_1', 'latitude_2', 'longitude_1', 'longitude_2']]; gc.collect()
+
+    test['address_1'] = test['id'].map(id_2_address)
+    test['address_2'] = test['match_id'].map(id_2_address)
+    test = add_longest_substr(test)
+    del test[['address_1', 'address_2']]; gc.collect()
 
     w2v_sim = []
     for nv1, nv2 in tqdm(zip(test['id'].map(id_2_w2v_vec_valid), test['match_id'].map(id_2_w2v_vec_valid))):
@@ -487,9 +495,6 @@ for test_path in tqdm([
 
     test['name_1'] = test['id'].map(id_2_name)
     test['name_2'] = test['match_id'].map(id_2_name)
-    test["name_venn"] = test[["name_1", "name_2"]] \
-        .progress_apply(lambda row: name_similarity(row.name_1, row.name_2),
-                        axis=1)
 
     test['categories_1'] = test['id'].map(id_2_cat)
     test['categories_2'] = test['match_id'].map(id_2_cat)
