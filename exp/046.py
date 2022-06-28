@@ -130,7 +130,7 @@ def manhattan(lat1, long1, lat2, long2):
 
 
 class CFG:
-    EXP_ID = '045'
+    EXP_ID = '046'
     seed = 71
     epochs = 3
     LR = 1e-3
