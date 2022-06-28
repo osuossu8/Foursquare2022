@@ -113,18 +113,33 @@ data['text'] = ''
 for v in vec_columns:
     data['text'] += data[v].fillna('nan') + ' '
 
-tv_ids_d = np.load('tv_ids_d.npy')
+## Data split
+kf = GroupKFold(n_splits=2)
+for i, (trn_idx, val_idx) in enumerate(kf.split(data, 
+                                                data['point_of_interest'], 
+                                                data['point_of_interest'])):
+    data.loc[val_idx, 'set'] = i
+
+valid_data = data[data['set'] == 0]
+train_data = data[data['set'] == 1]
+
+train_ids = train_data['id'].unique().tolist()
+valid_ids = valid_data['id'].unique().tolist()
+
+tv_ids_d = {}
+tv_ids_d['train_ids'] = train_ids
+tv_ids_d['valid_ids'] = valid_ids
 
 for idx in ['train_ids', 'valid_ids']:
-    data = data.set_index('id')
-    data = data.loc[tv_ids_d[idx]]
-    data = data.reset_index()
+    data2 = data.set_index('id')
+    data2 = data2.loc[tv_ids_d[idx]]
+    data2 = data2.reset_index()
 
 
-    w2v_vec = W2VVectorizer(data['text'], vec_size=50).get_vectors()
+    w2v_vec = W2VVectorizer(data2['text'], vec_size=50).get_vectors()
     print(w2v_vec.shape)
 
-    id_2_text_w2v_vector = {k:v for k, v in zip(data['id'], w2v_vec)}
+    id_2_text_w2v_vector = {k:v for k, v in zip(data2['id'], w2v_vec)}
 
     to_pickle(f'features/id_2_text_w2v_vector_50d_{idx}.pkl', id_2_text_w2v_vector)
 
