@@ -141,5 +141,4 @@ for idx in ['train_ids', 'valid_ids']:
 
     print(id_2_w2v_vector_dict.keys())
     to_pickle(f'features/id_2_w2v_vector_dict_50d_{idx}.pkl', id_2_w2v_vector_dict)
-    del id_2_w2v_vector_dict; gc.collect()
 
