@@ -224,8 +224,8 @@ TRAIN_FEATURES = ['kdist',
                 'country_leven',
                 'country_nleven',
                 
-                #'text_1',
-                #'text_2',
+                'text_1',
+                'text_2',
 
                 'category_venn',
                 'haversine_distance',
@@ -235,8 +235,8 @@ TRAIN_FEATURES = ['kdist',
 
                 'name_sim_w2v', 
                 'categories_sim_w2v', 
-                'address_sim_w2v', 
-                'country_sim_w2v',
+                #'address_sim_w2v', 
+                #'country_sim_w2v',
 ]
 
 # Optimized cosine similarity function
@@ -272,7 +272,6 @@ name_2_name_use_vector = unpickle('features/name_2_name_use_vector.pkl')
 
 print('load data')
 train = pd.read_csv('input/downsampled_with_oof_037_train_data.csv')
-#train = train[train['oof']>0.01].reset_index(drop=True)
 print(train['label'].value_counts())
 
 train['latitude_1'] = train['id'].map(id_2_lat)
@@ -284,8 +283,8 @@ train['longitude_2'] = train['match_id'].map(id_2_lon)
 train = add_haversine_distance(train)
 
 id_2_w2v_vec_train = unpickle(f'features/id_2_w2v_vector_dict_50d_train_ids.pkl')
-for c in ['name', 'categories', 'address', 'country']:
-#for c in ['name', 'categories']:
+#for c in ['name', 'categories', 'address', 'country']:
+for c in ['name', 'categories']:
     w2v_sim = []
     for nv1, nv2 in tqdm(zip(train['id'].map(id_2_w2v_vec_train[c]), train['match_id'].map(id_2_w2v_vec_train[c]))):
         w2v_sim.append(cosine_similarity(nv1, nv2))
@@ -322,7 +321,7 @@ print(train[TRAIN_FEATURES].shape)
 # print(train[TRAIN_FEATURES].head())
 
 
-print(train[['name_sim_w2v', 'categories_sim_w2v', 'address_sim_w2v', 'country_sim_w2v', 'name_sim_use', 'categories_sim_use', 'category_venn']].head())
+print(train[['name_sim_w2v', 'categories_sim_w2v', 'name_sim_use', 'categories_sim_use', 'category_venn']].head())
 
 
 #kf = StratifiedGroupKFold(n_splits=CFG.n_splits)
@@ -360,14 +359,14 @@ def fit_cat(X, y, params=None,
             X_train, 
             y_train, 
             #cat_features=categorical_cols,
-            #text_features=text_cols,
+            text_features=text_cols,
             #feature_names=list(X_tr)
         )
         valid_pool = Pool(
             X_valid, 
             y_valid, 
             #cat_features=categorical_cols,
-            #text_features=text_cols,
+            text_features=text_cols,
             #feature_names=list(X_tr)
         )
 
@@ -447,8 +446,8 @@ for test_path in tqdm([
 
     test = add_haversine_distance(test)
 
-    for c in ['name', 'categories', 'address', 'country']:
-    #for c in ['name', 'categories']:    
+    #for c in ['name', 'categories', 'address', 'country']:
+    for c in ['name', 'categories']:    
         w2v_sim = []
         for nv1, nv2 in tqdm(zip(test['id'].map(id_2_w2v_vec_valid[c]), test['match_id'].map(id_2_w2v_vec_valid[c]))):
             w2v_sim.append(cosine_similarity(nv1, nv2))
