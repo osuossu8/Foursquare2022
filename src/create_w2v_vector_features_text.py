@@ -23,6 +23,7 @@ pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 from tqdm.auto import tqdm
+tqdm.pandas()
 
 from contextlib import contextmanager
 from pathlib import Path
@@ -84,41 +85,30 @@ class W2VVectorizer:
 
         print('fit models ...')
         self.model = word2vec.Word2Vec(self.sentences, 
-                                       size=self.vec_size,
+                                       vector_size=self.vec_size,
                                        min_count=1,
                                        window=1,
-                                       iter=100)
+                                       epochs=100)
         
-    def get_batches(self, l, n):
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
     def vectorize(self, word_list : list) -> np.array:
         V = []
         for word in word_list:
             try:
-                vector = self.model[word]
+                vector = self.model.wv[word]
             except:
-                vector = [j for j in range(self.size)]
+                vector = [j for j in range(self.vec_size)]
             V.append(vector)
         return np.mean(V, 0)        
 
     def get_vectors(self) -> pd.DataFrame:
 
-        batches = list(self.get_batches(self.sentences, 128))
-
         print('get vectors ...')
-        vectors = []
-        for batch in tqdm(batches):
-            vec = self.sentences.progress_apply(lambda x: self.vectorize(x))
-            #vec = pd.DataFrame(np.vstack([x for x in vec]))
-            vectors.append(vec)
-        #vectors = pd.concat(vectors, 0).reset_index(drop=True)
-        vectors = np.concatenate(vectors, 0)
+        vectors = self.sentences.progress_apply(lambda x: self.vectorize(x))
+        vectors = np.stack(vectors, 0)
         return vectors
 
 
-data = pd.read_csv('input/train.csv')
+data = pd.read_csv('input/train.csv', nrows=10000)
 data['text'] = ''
 for v in vec_columns:
     data['text'] += data[v].fillna('nan') + ' '
