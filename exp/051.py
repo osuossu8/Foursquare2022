@@ -131,7 +131,7 @@ def manhattan(lat1, long1, lat2, long2):
 
 longest_substring_columns = [
     'name',
-    'address',
+    #'address',
     'categories',
 ]
 
@@ -268,6 +268,11 @@ TRAIN_FEATURES = ['kdist',
                 'categories_sim_use',
 
                 'text_sim_w2v',
+
+                'name_longest_substr_ratio',
+                #'address_longest_substr_ratio',
+                'categories_longest_substr_ratio',
+
                 'text_sim_bm25_svd',
 ]
 
@@ -342,7 +347,7 @@ train["category_venn"] = train[["categories_1", "categories_2"]] \
 
 #train['address_1'] = train['id'].map(id_2_address)
 #train['address_2'] = train['match_id'].map(id_2_address)
-#train = add_longest_substr(train)
+train = add_longest_substr(train)
 #del train['address_1'], train['address_2']; gc.collect()
 
 use_sim = []
@@ -513,7 +518,7 @@ for test_path in tqdm([
 
     #test['address_1'] = test['id'].map(id_2_address)
     #test['address_2'] = test['match_id'].map(id_2_address)
-    #test = add_longest_substr(test)
+    test = add_longest_substr(test)
     #del test['address_1'], test['address_2']; gc.collect()
 
     use_sim = []
