@@ -556,7 +556,7 @@ del res_df; gc.collect()
 del id_2_text; gc.collect()
 del id_2_w2v_vec_valid; gc.collect()
 del id_2_text_tfidf_bm25_svd_vector; gc.collect()
-del id_2_text_mpnet_vector, sim; gc.collect()
+del id_2_text_mpnet_vector; gc.collect()
 
 print(test['id'].nunique())
 
