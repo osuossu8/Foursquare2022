@@ -85,7 +85,7 @@ data = pd.read_csv('input/train.csv')
 embedder_mpnet = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
 
 text_2_text_mpnet_vector = {}
-for v in vec_columns:
+for v in ['name', 'categories', 'address', 'state', 'url']:
     data[v] = data[v].fillna(f'no{v}')
     unique_value = data[c].unique()
     print(unique_value.shape)
