@@ -87,7 +87,7 @@ embedder_mpnet = SentenceTransformer('sentence-transformers/paraphrase-multiling
 text_2_text_mpnet_vector = {}
 for v in ['name', 'categories', 'address', 'state', 'url']:
     data[v] = data[v].fillna(f'no{v}')
-    unique_value = data[c].unique()
+    unique_value = data[v].unique()
     print(unique_value.shape)
     batches = list(get_batches(unique_value, 128))
     vectors = []
