@@ -510,8 +510,8 @@ for test_path in tqdm([
     test['categories_sim_use'] = categories_sim
 
     test['pred'] = 0
-    for cat_model in tqdm(models):
-        test['pred'] += cat_model.predict_proba(test[TRAIN_FEATURES])[:, 1]/len(models)
+    for xgb_model in tqdm(models):
+        test['pred'] += xgb_model.predict(xgboost.DMatrix(test[TRAIN_FEATURES]))/len(models)
 
     print(test[['id', 'match_id', 'pred']])
     res_df.append(test[test['pred'] > 0.5][['id', 'match_id']])
