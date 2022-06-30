@@ -81,46 +81,22 @@ def get_batches(l, n):
 
 
 data = pd.read_csv('input/train.csv')
-data['text'] = ''
-for v in vec_columns:
-    data['text'] += data[v].fillna('nan') + ' '
-
-print(data['text'].nunique())
-print(data['text'].unique()[:5])
 
 embedder_mpnet = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
 
-## Data split
-kf = GroupKFold(n_splits=2)
-for i, (trn_idx, val_idx) in enumerate(kf.split(data, 
-                                                data['point_of_interest'], 
-                                                data['point_of_interest'])):
-    data.loc[val_idx, 'set'] = i
-
-valid_data = data[data['set'] == 0]
-train_data = data[data['set'] == 1]
-
-train_ids = train_data['id'].unique().tolist()
-valid_ids = valid_data['id'].unique().tolist()
-
-tv_ids_d = {}
-tv_ids_d['train_ids'] = train_ids
-tv_ids_d['valid_ids'] = valid_ids
-
-for idx in ['train_ids', 'valid_ids']:
-    data2 = data.set_index('id')
-    data2 = data2.loc[tv_ids_d[idx]]
-    data2 = data2.reset_index()
-
-    batches = list(get_batches(data2['text'].unique(), 128))
+text_2_text_mpnet_vector = {}
+for v in vec_columns:
+    data[v] = data[v].fillna(f'no{v}')
+    unique_value = data[c].unique()
+    print(unique_value.shape)
+    batches = list(get_batches(unique_value, 128))
     vectors = []
     for batch in tqdm(batches):
         vec = embedder_mpnet.encode(batch, show_progress_bar=False).astype(np.float16)
         vectors.append(vec)
     vectors = np.concatenate(vectors, 0)
     print(vectors.shape)
+    text_2_text_mpnet_vector[v] = {k:v for k, v in zip(unique_value, vectors)}
 
-    text_2_text_mpnet_vector = {k:v for k, v in zip(data2['text'], vectors)}
-
-    to_pickle(f'features/text_2_text_mpnet_vector_{idx}.pkl', text_2_text_mpnet_vector)
-
+print(text_2_text_mpnet_vector.keys())
+to_pickle(f'features/text_2_text_mpnet_vector.pkl', text_2_text_mpnet_vector)
