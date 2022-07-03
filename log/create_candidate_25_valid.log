@@ -1,0 +1,65 @@
+Num of train data: 1138812
+1.0    569406
+0.0    569406
+Name: set, dtype: int64
+Train data: 
+Num of data: 569406
+Num of unique id: 569406
+Num of unique poi: 369987
+Mean num of unique poi: 1.5389892077289202
+Valid data: 
+Num of data: 569406
+Num of unique id: 569406
+Num of unique poi: 369985
+Mean num of unique poi: 1.5389975269267673
+set()
+Start knn grouped by country
+Start knn
+Num of unique id: 569406
+Num of train data: 17498361
+Pos rate: 0.05843221545149286
+                        id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label
+14680730  E_0951e655a65a0e  E_786aa8d15775ea       NaN         NaN       0.137896                24.0      0
+2315969   E_113fdd848f7654  E_ecd0916162d5da  0.001217         4.0       0.001021                 4.0      0
+13740940  E_21bc7125ae74eb  E_fc13e575a9a6d6  0.004514        24.0       0.004198                23.0      0
+2459589   E_51d093a3d6c26c  E_4b4a65e19dbe44  0.001583         4.0       0.001550                 4.0      0
+5833961   E_3ecd114b53ed75  E_4d20e2832a5955  0.020493        10.0       0.019861                11.0      0
+Unique id: 569406
+Unique id: 569406
+IoU score: 0.9280508167170813
+Current split: 1
+(3501311, 77)
+                       id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label  name_sim  name_gesh  name_leven  name_jaro  name_lcs  name_len_diff  name_nleven  name_nlcsk  name_nlcs  address_sim  address_gesh  address_leven  address_jaro  address_lcs  address_len_diff  address_nleven  address_nlcsk  address_nlcs  city_gesh  city_leven  city_jaro  city_lcs  city_len_diff  city_nleven  city_nlcsk  city_nlcs  state_sim  state_gesh  state_leven  state_jaro  state_lcs  state_len_diff  state_nleven  state_nlcsk  state_nlcs  zip_gesh  zip_leven  zip_jaro  zip_lcs  url_sim  url_gesh  url_leven  url_jaro  url_lcs  url_len_diff  url_nleven  url_nlcsk  url_nlcs  phone_gesh  phone_leven  phone_jaro  phone_lcs  categories_sim  categories_gesh  categories_leven  categories_jaro  categories_lcs  categories_len_diff  categories_nleven  categories_nlcsk  categories_nlcs  country_sim  country_gesh  country_leven  country_jaro  country_lcs  country_len_diff  \
+5713005  E_0893e5c33cb4cb  E_193330406537e7  0.001554        10.0       0.001108                 9.0      0       0.0   0.166667          16   0.314815         3             12     0.888889         0.5   0.166667          1.0           NaN            NaN           NaN          NaN                 0             NaN            NaN           NaN        NaN         NaN        NaN       NaN              0          NaN         NaN        NaN        1.0         NaN          NaN         NaN        NaN               0           NaN          NaN         NaN       NaN        NaN       NaN      NaN      1.0       NaN        NaN       NaN      NaN             0         NaN        NaN       NaN         NaN          NaN         NaN        NaN             0.0         0.461538              11.0         0.683532             6.0                    2           0.785714          0.428571              0.5          1.0           1.0            0.0           1.0          2.0                 0   
+
+         country_nleven  country_nlcsk  country_nlcs  
+5713005             0.0            1.0           1.0  
+Current split: 2
+(3499137, 77)
+                       id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label  name_sim  name_gesh  name_leven  name_jaro  name_lcs  name_len_diff  name_nleven  name_nlcsk  name_nlcs  address_sim  address_gesh  address_leven  address_jaro  address_lcs  address_len_diff  address_nleven  address_nlcsk  address_nlcs  city_gesh  city_leven  city_jaro  city_lcs  city_len_diff  city_nleven  city_nlcsk  city_nlcs  state_sim  state_gesh  state_leven  state_jaro  state_lcs  state_len_diff  state_nleven  state_nlcsk  state_nlcs  zip_gesh  zip_leven  zip_jaro  zip_lcs  url_sim  url_gesh  url_leven  url_jaro  url_lcs  url_len_diff  url_nleven  url_nlcsk  url_nlcs  phone_gesh  phone_leven  phone_jaro  phone_lcs  categories_sim  categories_gesh  categories_leven  categories_jaro  categories_lcs  categories_len_diff  categories_nleven  categories_nlcsk  categories_nlcs  country_sim  country_gesh  country_leven  country_jaro  country_lcs  country_len_diff  \
+3627491  E_5ef43096be0871  E_67b5cbf99b69f6  0.001377         6.0       0.001376                 6.0      0       0.0   0.344828          14   0.470635         5              1     0.933333    0.357143   0.333333          1.0           1.0            0.0           1.0         13.0                 0             0.0            1.0           1.0        1.0         0.0        1.0       5.0              0          0.0         1.0        1.0        1.0         1.0          0.0         1.0        8.0               0           0.0          1.0         1.0       NaN        NaN       NaN      NaN      1.0       NaN        NaN       NaN      NaN             0         NaN        NaN       NaN         NaN          NaN         NaN        NaN             0.0         0.352941              13.0         0.598635             6.0                    4           0.684211          0.315789              0.4          1.0           1.0            0.0           1.0          2.0                 0   
+
+         country_nleven  country_nlcsk  country_nlcs  
+3627491             0.0            1.0           1.0  
+Current split: 3
+(3498374, 77)
+                       id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label  name_sim  name_gesh  name_leven  name_jaro  name_lcs  name_len_diff  name_nleven  name_nlcsk  name_nlcs  address_sim  address_gesh  address_leven  address_jaro  address_lcs  address_len_diff  address_nleven  address_nlcsk  address_nlcs  city_gesh  city_leven  city_jaro  city_lcs  city_len_diff  city_nleven  city_nlcsk  city_nlcs  state_sim  state_gesh  state_leven  state_jaro  state_lcs  state_len_diff  state_nleven  state_nlcsk  state_nlcs  zip_gesh  zip_leven  zip_jaro  zip_lcs  url_sim  url_gesh  url_leven  url_jaro  url_lcs  url_len_diff  url_nleven  url_nlcsk  url_nlcs  phone_gesh  phone_leven  phone_jaro  phone_lcs  categories_sim  categories_gesh  categories_leven  categories_jaro  categories_lcs  categories_len_diff  categories_nleven  categories_nlcsk  categories_nlcs  country_sim  country_gesh  country_leven  country_jaro  country_lcs  country_len_diff  \
+8873753  E_95a3decf9a5e93  E_b1547a4ec684b9  0.038339        15.0       0.038336                19.0      0       0.0   0.266667          15   0.426244         4              4     0.882353    0.307692   0.235294          0.0      0.357143           13.0      0.576389          5.0                 4          0.8125         0.3125      0.416667   0.190476        10.0   0.462963       2.0              3     0.833333    0.222222   0.166667        1.0         1.0          0.0         1.0        2.0               0           0.0          1.0         1.0       0.6        2.0  0.813333      3.0      1.0       NaN        NaN       NaN      NaN             0         NaN        NaN       NaN         NaN          NaN         NaN        NaN             0.0         0.212766              30.0          0.35754             5.0                   23           0.857143          0.416667         0.142857          1.0           1.0            0.0           1.0          2.0                 0   
+
+         country_nleven  country_nlcsk  country_nlcs  
+8873753             0.0            1.0           1.0  
+Current split: 4
+(3499636, 77)
+                       id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label  name_sim  name_gesh  name_leven  name_jaro  name_lcs  name_len_diff  name_nleven  name_nlcsk  name_nlcs  address_sim  address_gesh  address_leven  address_jaro  address_lcs  address_len_diff  address_nleven  address_nlcsk  address_nlcs  city_gesh  city_leven  city_jaro  city_lcs  city_len_diff  city_nleven  city_nlcsk  city_nlcs  state_sim  state_gesh  state_leven  state_jaro  state_lcs  state_len_diff  state_nleven  state_nlcsk  state_nlcs  zip_gesh  zip_leven  zip_jaro  zip_lcs  url_sim  url_gesh  url_leven  url_jaro  url_lcs  url_len_diff  url_nleven  url_nlcsk  url_nlcs  phone_gesh  phone_leven  phone_jaro  phone_lcs  categories_sim  categories_gesh  categories_leven  categories_jaro  categories_lcs  categories_len_diff  categories_nleven  categories_nlcsk  categories_nlcs  country_sim  country_gesh  country_leven  country_jaro  country_lcs  country_len_diff  \
+4985468  E_c1401a8fc68f2b  E_1029f6b537f81d  0.002885         8.0            NaN                 NaN      0       0.0        0.0           9        0.0         0              6          1.0         0.0        0.0          0.0      0.245614           32.0      0.471822          8.0                17        0.864865       0.216216           0.4        1.0         0.0        1.0      15.0              0          0.0         1.0        1.0        1.0         1.0          0.0         1.0       12.0               0           0.0          1.0         1.0       NaN        NaN       NaN      NaN      0.0       NaN        NaN       NaN      NaN            19         NaN        NaN       NaN         NaN          NaN         NaN        NaN             0.0         0.145455              38.0         0.410982             6.0                   31           0.883721          0.139535              0.5          1.0           1.0            0.0           1.0          2.0                 0   
+
+         country_nleven  country_nlcsk  country_nlcs  
+4985468             0.0            1.0           1.0  
+Current split: 5
+(3499903, 77)
+                       id          match_id     kdist  kneighbors  kdist_country  kneighbors_country  label  name_sim  name_gesh  name_leven  name_jaro  name_lcs  name_len_diff  name_nleven  name_nlcsk  name_nlcs  address_sim  address_gesh  address_leven  address_jaro  address_lcs  address_len_diff  address_nleven  address_nlcsk  address_nlcs  city_gesh  city_leven  city_jaro  city_lcs  city_len_diff  city_nleven  city_nlcsk  city_nlcs  state_sim  state_gesh  state_leven  state_jaro  state_lcs  state_len_diff  state_nleven  state_nlcsk  state_nlcs  zip_gesh  zip_leven  zip_jaro  zip_lcs  url_sim  url_gesh  url_leven  url_jaro  url_lcs  url_len_diff  url_nleven  url_nlcsk  url_nlcs  phone_gesh  phone_leven  phone_jaro  phone_lcs  categories_sim  categories_gesh  categories_leven  categories_jaro  categories_lcs  categories_len_diff  categories_nleven  categories_nlcsk  categories_nlcs  country_sim  country_gesh  country_leven  country_jaro  country_lcs  country_len_diff  \
+2819276  E_f35e5cda29ae45  E_9fcfa8b833d972  0.001188         4.0       0.000958                 2.0      0       0.0   0.235294          19    0.34585         4             12     0.826087    0.363636   0.173913      0.56663      0.342857           16.0      0.452485          6.0                 3        0.842105       0.315789         0.375        1.0         0.0        1.0       7.0              0          0.0         1.0        1.0        1.0         1.0          0.0         1.0        9.0               0           0.0          1.0         1.0       NaN        NaN       NaN      NaN      1.0       NaN        NaN       NaN      NaN             0         NaN        NaN       NaN         NaN          NaN         NaN        NaN             0.0              NaN               NaN              NaN             NaN                   22                NaN               NaN              NaN          1.0           1.0            0.0           1.0          2.0                 0   
+
+         country_nleven  country_nlcsk  country_nlcs  
+2819276             0.0            1.0           1.0  
+17498361
