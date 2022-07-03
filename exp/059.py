@@ -305,9 +305,9 @@ TRAIN_FEATURES = [
                 #'categories_sim_use',
                 #'text_sim_w2v',
 
-                'name_longest_substr_ratio',
-                'address_longest_substr_ratio',
-                'categories_longest_substr_ratio',
+                #'name_longest_substr_ratio',
+                #'address_longest_substr_ratio',
+                #'categories_longest_substr_ratio',
 
                 #'text_sim_bm25_svd',
                 #'text_sim_mpnet',
@@ -350,7 +350,6 @@ del data;gc.collect()
 #name_2_name_use_vector = unpickle('features/name_2_name_use_vector.pkl')
 
 print('load data')
-"""
 train = pd.read_csv('input/train_data_candidate_25_faiss_1.csv')
 train = reduce_mem_usage(train)
 print(train['label'].value_counts())
@@ -371,9 +370,8 @@ train = pd.concat([
 ], 0).reset_index(drop=True)
 del train2, train3, train4, train5; gc.collect()
 
-train.to_csv('input/train_data_candidate_25_faiss_all.csv', index=False)
-"""
-train = pd.read_csv('input/train_data_candidate_25_faiss_all.csv')
+#train.to_csv('input/train_data_candidate_25_faiss_all.csv', index=False)
+#train = pd.read_csv('input/train_data_candidate_25_faiss_all.csv')
 print(train['label'].value_counts())
 
 train['latitude_1'] = train['id'].map(id_2_lat)
@@ -429,9 +427,10 @@ train['number_1'] = train['address_1'].str.extract('(\d+)')
 train['number_2'] = train['address_2'].str.extract('(\d+)')
 train['same_number'] = (train['number_1'] == train['number_2']).astype(int)
 del train['number_1'], train['number_2']; gc.collect()
+"""
 train = add_longest_substr(train)
 del train['address_1'], train['address_2']; gc.collect()
-"""
+
 use_sim = []
 for nv1, nv2 in tqdm(zip(train['name_1'].map(name_2_name_use_vector), train['name_2'].map(name_2_name_use_vector))):
     use_sim.append(cosine_similarity(nv1, nv2))
@@ -609,9 +608,10 @@ for test_path in tqdm([
     test['number_2'] = test['address_2'].str.extract('(\d+)')
     test['same_number'] = (test['number_1'] == test['number_2']).astype(int)
     del test['number_1'], test['number_2']; gc.collect()
+    """
     test = add_longest_substr(test)
     del test['address_1'], test['address_2']; gc.collect()
-    """
+    
     use_sim = []
     for nv1, nv2 in tqdm(zip(test['name_1'].map(name_2_name_use_vector), test['name_2'].map(name_2_name_use_vector))):
         use_sim.append(cosine_similarity(nv1, nv2))
