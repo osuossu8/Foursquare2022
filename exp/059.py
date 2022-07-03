@@ -350,9 +350,10 @@ del data;gc.collect()
 #name_2_name_use_vector = unpickle('features/name_2_name_use_vector.pkl')
 
 print('load data')
+"""
 train = pd.read_csv('input/train_data_candidate_25_faiss_1.csv')
 train = reduce_mem_usage(train)
-print(train1['label'].value_counts())
+print(train['label'].value_counts())
 train2 = pd.read_csv('input/train_data_candidate_25_faiss_2.csv')
 train2 = reduce_mem_usage(train2)
 print(train2['label'].value_counts())
@@ -371,6 +372,9 @@ train = pd.concat([
 del train2, train3, train4, train5; gc.collect()
 
 train.to_csv('input/train_data_candidate_25_faiss_all.csv', index=False)
+"""
+train = pd.read_csv('input/train_data_candidate_25_faiss_all.csv')
+print(train['label'].value_counts())
 
 train['latitude_1'] = train['id'].map(id_2_lat)
 train['latitude_2'] = train['match_id'].map(id_2_lat)
@@ -409,10 +413,10 @@ id_2_text = unpickle('features/id_2_text.pkl')
 
 train['text_1'] = train['id'].map(id_2_text)
 train['text_2'] = train['match_id'].map(id_2_text)
-
+"""
 train['name_1'] = train['id'].map(id_2_name)
 train['name_2'] = train['match_id'].map(id_2_name)
-"""
+
 train['categories_1'] = train['id'].map(id_2_cat)
 train['categories_2'] = train['match_id'].map(id_2_cat)
 train["category_venn"] = train[["categories_1", "categories_2"]] \
@@ -589,10 +593,10 @@ for test_path in tqdm([
 
     test['text_1'] = test['id'].map(id_2_text)
     test['text_2'] = test['match_id'].map(id_2_text)
-
+    """
     test['name_1'] = test['id'].map(id_2_name)
     test['name_2'] = test['match_id'].map(id_2_name)
-    """
+    
     test['categories_1'] = test['id'].map(id_2_cat)
     test['categories_2'] = test['match_id'].map(id_2_cat)
     test["category_venn"] = test[["categories_1", "categories_2"]] \
