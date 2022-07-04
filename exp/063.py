@@ -471,7 +471,7 @@ params = {
     #'num_leaves': 35,
     'n_estimators': 9200,
     #"colsample_bytree": 0.9,
-    'use_best_model': True,
+    #'use_best_model': True,
     #'cat_features': ['country'],
     #'text_features': ['categories'],
     'task_type': "GPU",
