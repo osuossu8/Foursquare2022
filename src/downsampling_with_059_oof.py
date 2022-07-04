@@ -227,22 +227,25 @@ device = set_device()
 logger = init_logger(log_file='log/' + f"{CFG.EXP_ID}.log")
 
 print('load data')
-train1 = pd.read_csv('input/train_data_candidate_25_faiss_1.csv')
-print(train1['label'].value_counts())
+train = pd.read_csv('input/train_data_candidate_25_faiss_1.csv')
+train = reduce_mem_usage(train)
+print(train['label'].value_counts())
 train2 = pd.read_csv('input/train_data_candidate_25_faiss_2.csv')
+train2 = reduce_mem_usage(train2)
 print(train2['label'].value_counts())
 train3 = pd.read_csv('input/train_data_candidate_25_faiss_3.csv')
+train3 = reduce_mem_usage(train3)
 print(train3['label'].value_counts())
 train4 = pd.read_csv('input/train_data_candidate_25_faiss_4.csv')
+train4 = reduce_mem_usage(train4)
 print(train4['label'].value_counts())
 train5 = pd.read_csv('input/train_data_candidate_25_faiss_5.csv')
+train5 = reduce_mem_usage(train5)
 print(train5['label'].value_counts())
-
 train = pd.concat([
-    train1, train2, train3, train4, train5
+    train, train2, train3, train4, train5
 ], 0).reset_index(drop=True)
-
-del train1, train2, train3, train4, train5; gc.collect()
+del train2, train3, train4, train5; gc.collect()
 
 train['oof'] = np.load(OUTPUT_DIR+'oof.npy')
 
