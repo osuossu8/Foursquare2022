@@ -453,19 +453,17 @@ def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
         X_valid, y_valid = X.iloc[val_idx], y.iloc[val_idx]
 
         if model_dir is None:
-            model = lgbm.LGBMClassifier(**params)
+            model = lgbm.LGBMRegressor(**params)
             model.fit(
                 X_train, y_train,
                 eval_set=[(X_valid, y_valid)],
                 early_stopping_rounds=es_rounds,
-                eval_metric='logloss',
-    #             verbose=-1)
-                verbose=50)
+                verbose=100)
         else:
             with open(f'{model_dir}/lgbm_fold{i}.pkl', 'rb') as f:
                 model = pickle.load(f)
 
-        pred = model.predict_proba(X_valid)[:, 1]
+        pred = model.predict(X_valid)
         oof[val_idx] = pred
         models.append(model)
 
@@ -479,7 +477,8 @@ def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
 
 
 params = {
-    'objective': "logloss",
+    'objective': "regression",
+    
     'learning_rate': 0.2,
     'reg_alpha': 0.1,
     'reg_lambda': 0.1,
@@ -578,7 +577,7 @@ for test_path in tqdm([
     """
     test['pred'] = 0
     for lgbm_model in tqdm(models):
-        test['pred'] += lgbm_model.predict_proba(test[TRAIN_FEATURES])[:, 1]/len(models)
+        test['pred'] += lgbm_model.predict(test[TRAIN_FEATURES])/len(models)
 
     print(test[['id', 'match_id', 'pred']])
     res_df.append(test[test['pred'] > 0.5][['id', 'match_id']])
