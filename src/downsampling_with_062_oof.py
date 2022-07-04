@@ -117,7 +117,7 @@ def reduce_mem_usage(df):
 
 
 class CFG:
-    EXP_ID = '059'
+    EXP_ID = '062'
     seed = 71
     epochs = 3
     LR = 1e-3
