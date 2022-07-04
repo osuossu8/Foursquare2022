@@ -491,10 +491,10 @@ params = {
     "colsample_bytree": 0.9,
 }
 
-oof, models = fit_lgbm(train[features], train["target"].astype(int),
-                       params=params, n_class=int(train["target"].max() + 1),
-                       N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
+oof, models = fit_lgbm(train[TRAIN_FEATURES], train["label"].astype(int),
+                       params=params, n_class=int(train["label"].max() + 1),
+                       N_SPLITS=CFG.n_splits, folds=train["fold"].values)
 
 print(oof.shape)
 np.save(OUTPUT_DIR+'oof.npy', oof)
