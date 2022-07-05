@@ -479,7 +479,7 @@ def fit_lgbm(X, y, params=None, es_rounds=20, seed=42, N_SPLITS=5,
 params = {
     'objective': "regression",
     
-    'learning_rate': 0.2,
+    'learning_rate': 0.3, # 0.2,
     'reg_alpha': 0.1,
     'reg_lambda': 0.1,
     'random_state': 42,
