@@ -166,12 +166,10 @@ def recall_knn(df, Neighbors = 10):
 
     print('Start knn with name emb')
     matcher = NearestNeighborsGPU(n_neighbors = Neighbors,
-                       metric = 'hamming',
-                       radius=1,
+                       metric = 'minkowski',
                        algorithm='auto',
-                       leaf_size=30,
                        p=2,
-                       n_jobs=-1)
+                       output_type='numpy')
     
     matcher.fit(EMBEDDINGS_MPNET)
     dists3, nears3 = matcher.kneighbors(EMBEDDINGS_MPNET)
