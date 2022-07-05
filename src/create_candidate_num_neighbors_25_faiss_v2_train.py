@@ -55,7 +55,7 @@ logger = init_logger(log_file='log/' + f"create_candidate_25_faiss_v2_train.log"
 
 import faiss
 from sentence_transformers import SentenceTransformer
-from cuml.neighbors import NearestNeighbors
+from cuml.neighbors import NearestNeighbors as NearestNeighborsGPU
 
 
 def get_batches(l, n):
@@ -165,7 +165,7 @@ def recall_knn(df, Neighbors = 10):
     del faiss_index; gc.collect()
 
     print('Start knn with name emb')
-    matcher = NearestNeighbors(n_neighbors = Neighbors,
+    matcher = NearestNeighborsGPU(n_neighbors = Neighbors,
                        metric = 'hamming',
                        radius=1,
                        algorithm='auto',
