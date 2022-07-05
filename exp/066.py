@@ -445,7 +445,7 @@ def fit_cat(X, y, params=None,
             X, 
             y, 
             #cat_features=categorical_cols,
-            #text_features=text_cols,
+            text_features=text_cols,
             #feature_names=list(X_tr)
     )
 
