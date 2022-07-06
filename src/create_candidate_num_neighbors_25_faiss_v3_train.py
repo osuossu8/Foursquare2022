@@ -205,9 +205,14 @@ def recall_knn(df, Neighbors = 10):
     wv2_vec = W2VVectorizer(df['text'], vec_size=50).get_vectors()
 
     print('Start knn with w2v text emb')
-    knn = NearestNeighbors(n_neighbors = Neighbors)
-    knn.fit(wv2_vec, df.index)
-    dists3, nears3 = knn.kneighbors(wv2_vec)
+    matcher = NearestNeighborsGPU(n_neighbors = Neighbors,
+                       metric = 'minkowski',
+                       algorithm='auto',
+                       p=2,
+                       output_type='numpy')
+    
+    matcher.fit(wv2_vec)
+    dists3, nears3 = matcher.kneighbors(wv2_vec)
 
     for k in range(Neighbors):            
         cur_df = df[['id']]
