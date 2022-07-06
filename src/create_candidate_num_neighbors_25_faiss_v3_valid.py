@@ -57,6 +57,8 @@ import faiss
 from sentence_transformers import SentenceTransformer
 from cuml.neighbors import NearestNeighbors as NearestNeighborsGPU
 
+tqdm.pandas()
+
 
 def get_batches(l, n):
     for i in range(0, len(l), n):
