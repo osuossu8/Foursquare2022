@@ -63,6 +63,38 @@ def get_batches(l, n):
         yield l[i:i + n]
 
 # https://www.kaggle.com/code/guoyonfan/training-data-for-binary-lgb-baseline-0-834/notebook
+from gensim.models import word2vec
+from gensim.models import KeyedVectors
+
+
+class W2VVectorizer:
+    def __init__(self, sentences, vec_size):
+        self.sentences = sentences.apply(lambda x: x.split())
+        self.vec_size = vec_size
+
+        print('fit models ...')
+        self.model = word2vec.Word2Vec(self.sentences, 
+                                       vector_size=self.vec_size,
+                                       min_count=1,
+                                       window=1,
+                                       epochs=100)
+        
+    def vectorize(self, word_list : list) -> np.array:
+        V = []
+        for word in word_list:
+            try:
+                vector = self.model.wv[word]
+            except:
+                vector = [j for j in range(self.vec_size)]
+            V.append(vector)
+        return np.mean(V, 0)        
+
+    def get_vectors(self) -> pd.DataFrame:
+
+        print('get vectors ...')
+        vectors = self.sentences.progress_apply(lambda x: self.vectorize(x))
+        vectors = np.stack(vectors, 0)
+        return vectors
 
 ## Parameters
 is_debug = False
